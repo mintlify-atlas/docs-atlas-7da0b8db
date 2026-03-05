@@ -123,8 +123,10 @@ Validates that a String meets all configured rules.
 **Example:**
 
 ```java
-Validator validator = new Validator();
-validator.required();
+Validator validator = new Validator.Builder()
+    .build();
+validator.required()
+    .build();
 validator.email();
 
 if (validator.isValid("user@example.com")) {
@@ -384,8 +386,10 @@ try {
 ### Pattern 1: Direct Instantiation
 
 ```java
-Validator validator = new Validator();
-validator.required();
+Validator validator = new Validator.Builder()
+    .build();
+validator.required()
+    .build();
 validator.email();
 validator.maxLength(255);
 

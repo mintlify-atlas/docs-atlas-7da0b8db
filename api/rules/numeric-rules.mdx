@@ -30,8 +30,10 @@ public void number()
 **Example:**
 
 ```java
-Validator validator = new Validator();
-validator.number();
+Validator validator = new Validator.Builder()
+    .build();
+validator.number()
+    .build();
 validator.number("Please enter a valid number");
 
 validator.isValid("123");      // true
@@ -161,8 +163,10 @@ public void minValue(double min)
 **Example:**
 
 ```java
-Validator validator = new Validator();
-validator.number();
+Validator validator = new Validator.Builder()
+    .build();
+validator.number()
+    .build();
 validator.minValue(0);
 validator.minValue(18, "Must be at least %s years old");
 
@@ -210,8 +214,10 @@ public void maxValue(double max)
 **Example:**
 
 ```java
-Validator validator = new Validator();
-validator.number();
+Validator validator = new Validator.Builder()
+    .build();
+validator.number()
+    .build();
 validator.maxValue(100);
 validator.maxValue(150.5, "Cannot exceed %s");
 
@@ -263,8 +269,10 @@ public void rangeValue(double min, double max)
 **Example:**
 
 ```java
-Validator validator = new Validator();
-validator.number();
+Validator validator = new Validator.Builder()
+    .build();
+validator.number()
+    .build();
 validator.rangeValue(1, 10);
 validator.rangeValue(18, 65, "Age must be between %s and %s");
 

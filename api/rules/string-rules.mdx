@@ -25,7 +25,8 @@ public void required()
 **Example:**
 
 ```java
-Validator validator = new Validator();
+Validator validator = new Validator.Builder()
+    .build();
 validator.required(); // Uses default message
 validator.required("This field is required"); // Custom message
 

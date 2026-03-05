@@ -24,11 +24,12 @@ RegularExpression.NUMBER = "^\\d+$"
 
 **Example:**
 ```java
-Validator validator = new Validator()
-    .regExp(RegularExpression.NUMBER, "Must contain only digits");
+Validator validator = new Validator.Builder()
+    .regExp(RegularExpression.NUMBER, "Must contain only digits")
+    .build();
 
-validator.verify("quantity", "123");    // Valid
-validator.verify("quantity", "-123");   // Invalid
+validator.isValid("123");    // Valid
+validator.isValid("-123");   // Invalid
 ```
 
 ### ALPHABET
@@ -51,11 +52,12 @@ RegularExpression.ALPHA_NUMERIC = "^[a-zA-Z0-9]+$"
 
 **Example:**
 ```java
-Validator validator = new Validator()
-    .regExp(RegularExpression.ALPHA_NUMERIC, "Must contain only letters and numbers");
+Validator validator = new Validator.Builder()
+    .regExp(RegularExpression.ALPHA_NUMERIC, "Must contain only letters and numbers")
+    .build();
 
-validator.verify("username", "User123");    // Valid
-validator.verify("username", "User_123");   // Invalid
+validator.isValid("User123");    // Valid
+validator.isValid("User_123");   // Invalid
 ```
 
 ### DECIMAL
@@ -69,12 +71,13 @@ RegularExpression.DECIMAL = "^\\-?\\d*\\.?\\d+?$"
 
 **Example:**
 ```java
-Validator validator = new Validator()
-    .regExp(RegularExpression.DECIMAL, "Must be a valid number");
+Validator validator = new Validator.Builder()
+    .regExp(RegularExpression.DECIMAL, "Must be a valid number")
+    .build();
 
-validator.verify("price", "19.99");    // Valid
-validator.verify("price", "-5.50");    // Valid
-validator.verify("price", "12..34");   // Invalid
+validator.isValid("19.99");    // Valid
+validator.isValid("-5.50");    // Valid
+validator.isValid("12..34");   // Invalid
 ```
 
 ## Email and Names
@@ -90,11 +93,12 @@ RegularExpression.EMAIL = "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?
 
 **Example:**
 ```java
-Validator validator = new Validator()
-    .regExp(RegularExpression.EMAIL, "Must be a valid email address");
+Validator validator = new Validator.Builder()
+    .regExp(RegularExpression.EMAIL, "Must be a valid email address")
+    .build();
 
-validator.verify("email", "user@example.com");  // Valid
-validator.verify("email", "invalid@");          // Invalid
+validator.isValid("user@example.com");  // Valid
+validator.isValid("invalid@");          // Invalid
 ```
 
 ### NAME
@@ -108,11 +112,12 @@ RegularExpression.NAME = "^[a-zA-Z]+(\\s?[a-zA-Z])*$"
 
 **Example:**
 ```java
-Validator validator = new Validator()
-    .regExp(RegularExpression.NAME, "Must be a valid name");
+Validator validator = new Validator.Builder()
+    .regExp(RegularExpression.NAME, "Must be a valid name")
+    .build();
 
-validator.verify("name", "John Doe");     // Valid
-validator.verify("name", "John123");      // Invalid
+validator.isValid("John Doe");     // Valid
+validator.isValid("John123");      // Invalid
 ```
 
 ### NAME_ES
@@ -126,11 +131,12 @@ RegularExpression.NAME_ES = "^[a-zA-ZáéíóúñÁÉÍÓÚÑ]+(\\s?[a-zA-Záé�
 
 **Example:**
 ```java
-Validator validator = new Validator()
-    .regExp(RegularExpression.NAME_ES, "Debe ser un nombre válido");
+Validator validator = new Validator.Builder()
+    .regExp(RegularExpression.NAME_ES, "Debe ser un nombre válido")
+    .build();
 
-validator.verify("nombre", "José María");   // Valid
-validator.verify("nombre", "José123");      // Invalid
+validator.isValid("José María");   // Valid
+validator.isValid("José123");      // Invalid
 ```
 
 ## URL Patterns
@@ -149,11 +155,12 @@ RegularExpression.LINK = "^((https://)|(www.)|(http://))+([a-zA-Z0-9@:%._+~#=]{2
 
 **Example:**
 ```java
-Validator validator = new Validator()
-    .regExp(RegularExpression.LINK, "Must be a valid URL");
+Validator validator = new Validator.Builder()
+    .regExp(RegularExpression.LINK, "Must be a valid URL")
+    .build();
 
-validator.verify("website", "https://example.com");  // Valid
-validator.verify("website", "not-a-url");            // Invalid
+validator.isValid("https://example.com");  // Valid
+validator.isValid("not-a-url");            // Invalid
 ```
 
 ### WWW_LINK
@@ -197,12 +204,13 @@ RegularExpression.IP // Complex pattern supporting both IPv4 and IPv6
 
 **Example:**
 ```java
-Validator validator = new Validator()
-    .regExp(RegularExpression.IP, "Must be a valid IP address");
+Validator validator = new Validator.Builder()
+    .regExp(RegularExpression.IP, "Must be a valid IP address")
+    .build();
 
-validator.verify("ip", "192.168.1.1");                          // Valid
-validator.verify("ip", "2001:0db8:85a3:0000:0000:8a2e:0370:7334"); // Valid
-validator.verify("ip", "256.1.1.1");                             // Invalid
+validator.isValid("192.168.1.1");                          // Valid
+validator.isValid("2001:0db8:85a3:0000:0000:8a2e:0370:7334"); // Valid
+validator.isValid("256.1.1.1");                             // Invalid
 ```
 
 ### IPV4
@@ -240,12 +248,13 @@ RegularExpression.TIME = "^(^(([0-1]?\\d)|(2[0-3])):([0-5][0-9])(:?[0-5][0-9])?$
 
 **Example:**
 ```java
-Validator validator = new Validator()
-    .regExp(RegularExpression.TIME, "Must be a valid time");
+Validator validator = new Validator.Builder()
+    .regExp(RegularExpression.TIME, "Must be a valid time")
+    .build();
 
-validator.verify("time", "14:30");      // Valid
-validator.verify("time", "2:30 PM");    // Valid
-validator.verify("time", "25:00");      // Invalid
+validator.isValid("14:30");      // Valid
+validator.isValid("2:30 PM");    // Valid
+validator.isValid("25:00");      // Invalid
 ```
 
 ### TIME12
@@ -259,11 +268,12 @@ RegularExpression.TIME12 = "^((0?[1-9])|(1[0-2])):([0-5][0-9])(:[0-5][0-9])?\\s?
 
 **Example:**
 ```java
-Validator validator = new Validator()
-    .regExp(RegularExpression.TIME12, "Must be in 12-hour format (e.g., 2:30 PM)");
+Validator validator = new Validator.Builder()
+    .regExp(RegularExpression.TIME12, "Must be in 12-hour format (e.g., 2:30 PM)")
+    .build();
 
-validator.verify("time", "2:30 PM");    // Valid
-validator.verify("time", "14:30");      // Invalid
+validator.isValid("2:30 PM");    // Valid
+validator.isValid("14:30");      // Invalid
 ```
 
 ### TIME24
@@ -277,11 +287,12 @@ RegularExpression.TIME24 = "^(([0-1]?\\d)|(2[0-3])):([0-5][0-9])(:?[0-5][0-9])?$
 
 **Example:**
 ```java
-Validator validator = new Validator()
-    .regExp(RegularExpression.TIME24, "Must be in 24-hour format (e.g., 14:30)");
+Validator validator = new Validator.Builder()
+    .regExp(RegularExpression.TIME24, "Must be in 24-hour format (e.g., 14:30)")
+    .build();
 
-validator.verify("time", "14:30");      // Valid
-validator.verify("time", "2:30 PM");    // Invalid
+validator.isValid("14:30");      // Valid
+validator.isValid("2:30 PM");    // Invalid
 ```
 
 ## Additional Patterns
@@ -314,7 +325,7 @@ Validator emailValidator = new Validator()
     .regExp(RegularExpression.EMAIL, "Must be a valid email address");
 
 try {
-    emailValidator.verify("email", "user@example.com");
+    emailValidator.isValid("email", "user@example.com");
 } catch (InvalidEvaluationException e) {
     System.out.println(e.getMessage());
 }
@@ -337,11 +348,12 @@ You can also use custom regex patterns with the `regExp` rule:
 // Custom pattern for a specific format
 String customPattern = "^[A-Z]{3}-\\d{4}$"; // Matches: ABC-1234
 
-Validator validator = new Validator()
-    .regExp(customPattern, "Must match format: XXX-0000");
+Validator validator = new Validator.Builder()
+    .regExp(customPattern, "Must match format: XXX-0000")
+    .build();
 
-validator.verify("code", "ABC-1234");  // Valid
-validator.verify("code", "abc-1234");  // Invalid
+validator.isValid("ABC-1234");  // Valid
+validator.isValid("abc-1234");  // Invalid
 ```
 
 ## Common Use Cases

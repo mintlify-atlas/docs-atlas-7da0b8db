@@ -28,7 +28,7 @@ Each method call adds a new rule to the validation chain. Call `.build()` to cre
 You can also add rules to a Validator instance directly:
 
 ```java
-Validator validator = new Validator();
+Validator validator = new Validator.Builder();
 
 validator.rule("Enter a text other than null", (String evaluate) -> {
     return evaluate != null;

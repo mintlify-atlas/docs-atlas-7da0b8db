@@ -162,10 +162,12 @@ for (Rule rule : passwordRules) {
 While you can create Rule instances directly, they are typically used within the Validator class:
 
 ```java
-Validator validator = new Validator();
+Validator validator = new Validator.Builder()
+    .build();
 
 // The rule() method creates a Rule internally
-validator.rule("Must not contain spaces", value -> !value.contains(" "));
+validator.rule("Must not contain spaces", value -> !value.contains(" "))
+    .build();
 validator.rule("Must start with letter", value -> 
     !value.isEmpty() && Character.isLetter(value.charAt(0))
 );

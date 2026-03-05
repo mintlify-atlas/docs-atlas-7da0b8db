@@ -21,7 +21,7 @@ Let's start by creating a simple validator that checks if a string is not null a
       public static void main(String[] args) {
 
         // Instantiating a new validator
-        Validator validator = new Validator();
+        Validator validator = new Validator.Builder();
 
         // First rule: checks if string is not null
         validator.rule("Enter a text other than null", (String evaluate) -> {

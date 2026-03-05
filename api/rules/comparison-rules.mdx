@@ -158,8 +158,10 @@ public void setNotMatchMessage(String message)
 **Example:**
 
 ```java
-Validator validator = new Validator();
-validator.setNotMatchMessage("The values do not match");
+Validator validator = new Validator.Builder()
+    .build();
+validator.setNotMatchMessage("The values do not match")
+    .build();
 validator.setNotMatchMessage("Passwords must be identical");
 validator.setNotMatchMessage("Email confirmation does not match");
 ```
@@ -362,7 +364,8 @@ Validator passwordValidator = new Validator.Builder()
     .mustContainOne("0123456789", "Must contain a number")
     .setNotMatchMessage("Passwords do not match")
     .onInvalidEvaluation(error -> {
-        passwordErrorLabel.setText(error);
+        passwordErrorLabel.setText(error)
+    .build();
         passwordErrorLabel.setVisible(true);
     })
     .build();
@@ -496,7 +499,8 @@ Validator validator = new Validator.Builder()
     .setNotMatchMessage("Email addresses do not match")
     .onInvalidEvaluation(errorMessage -> {
         // Show error in UI immediately
-        errorLabel.setText(errorMessage);
+        errorLabel.setText(errorMessage)
+    .build();
         errorLabel.setVisible(true);
         inputField.setError(true);
     })
