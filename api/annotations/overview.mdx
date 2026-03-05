@@ -1,0 +1,228 @@
+---
+title: Annotations Overview
+description: Learn how to validate POJOs using Validator annotations
+---
+
+## Introduction
+
+Validator provides a comprehensive set of annotations that simplify validation by allowing you to declaratively define validation rules directly on your POJO fields. Instead of manually creating validators and chaining rules, you can annotate your class fields and use the static `Validator.validOrFail(object)` method to validate all annotated fields at once.
+
+## How Annotations Work
+
+Annotations in Validator offer the same validation capabilities as programmatic rules, but with a more declarative syntax. Each annotation corresponds to a predefined rule and can be applied to String fields in your Java classes.
+
+### Basic Usage
+
+To validate a POJO using annotations:
+
+1. **Annotate your fields** with the desired validation annotations
+2. **Call `Validator.validOrFail(object)`** to validate the object
+3. **Handle `InvalidEvaluationException`** if validation fails
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.annotations.Required;
+import io.github.ApamateSoft.validator.annotations.Email;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+public class User {
+    @Required
+    @Email
+    private String email;
+
+    // Constructor, getters, setters...
+}
+
+public class Main {
+    public static void main(String[] args) {
+        User user = new User();
+        user.setEmail("invalid-email");
+        
+        try {
+            Validator.validOrFail(user);
+            // Validation passed
+        } catch (InvalidEvaluationException e) {
+            System.out.println("Field: " + e.getKey());
+            System.out.println("Value: " + e.getValue());
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+}
+```
+
+## Multiple Annotations
+
+You can apply multiple annotations to a single field. They will be evaluated in the order they are declared, and validation stops at the first failure:
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class RegisterForm {
+    @Required(message = "Required")
+    @MinLength(min = 8, message = "At least 8 characters required")
+    @MustContainMin(min = 3, alphabet = ALPHA_LOWERCASE, message = "At least 3 lowercase letters required")
+    @MustContainMin(min = 3, alphabet = NUMBER, message = "At least 3 numbers required")
+    @MustContainOne(alphabet = ALPHA_UPPERCASE, message = "At least one uppercase letter required")
+    @MustContainOne(alphabet = "@#*-", message = "At least one special character required")
+    @Compare(compareWith = "passwordConfirm", message = "Passwords do not match")
+    private String password;
+    
+    private String passwordConfirm;
+
+    // Constructor, getters, setters...
+}
+```
+
+## Custom Error Messages
+
+All annotations support an optional `message` attribute to customize the error message:
+
+```java
+@Required(message = "Username is required")
+@MinLength(min = 3, message = "Username must be at least 3 characters")
+private String username;
+```
+
+If you don't provide a custom message, Validator will use a default message. See the [Default Messages](#default-messages) section below.
+
+## Default Messages
+
+When you omit the `message` attribute, Validator uses default messages:
+
+```java
+@Required
+@MinLength(min = 5)
+@OnlyNumbers
+private String zipCode;
+```
+
+Default messages are provided in English (default) and Spanish. You can change the language globally:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.messages.MessagesEs;
+
+public class Main {
+    public static void main(String[] args) {
+        Validator.setMessages(new MessagesEs());
+    }
+}
+```
+
+### Default Message Table
+
+| Annotation | English (Default) | Spanish |
+|------------|------------------|----------|
+| `@Required` | Required | Requerido |
+| `@MinLength` | %d or more characters are required | Se requiere %d o más caracteres |
+| `@MaxLength` | %d or less characters required | Se requiere %d o menos caracteres |
+| `@Length` | It requires %d characters | Se requiere %d caracteres |
+| `@RangeLength` | The text must contain between %d to %d characters | El texto debe contener entre %d a %d caracteres |
+| `@OnlyLetters` | Only letters | Solo letras |
+| `@OnlyNumbers` | Only numbers | Solo números |
+| `@OnlyAlphanumeric` | Just alphanumeric characters | Solo caracteres alfanuméricos |
+| `@Email` | Email invalid | Correo electrónico inválido |
+| `@Number` | It is not a number | No es un número |
+| `@MinValue` | The value cannot be less than %1$.2f | El valor no puede ser menor a %1$.2f |
+| `@MaxValue` | The value cannot be greater than %1$.2f | El valor no puede ser mayor a %1$.2f |
+| `@Compare` | Not match | No coinciden |
+
+For a complete list of default messages, see the README lines 249-287.
+
+## Annotation Categories
+
+Validator provides over 30 annotations organized into three main categories:
+
+<CardGroup cols={3}>
+  <Card title="String Annotations" icon="text" href="./string-annotations">
+    Validate string length, content, and character composition
+  </Card>
+  <Card title="Numeric Annotations" icon="hashtag" href="./numeric-annotations">
+    Validate numeric values and patterns
+  </Card>
+  <Card title="Format Annotations" icon="check" href="./format-annotations">
+    Validate specific formats like email, dates, URLs, and IPs
+  </Card>
+</CardGroup>
+
+## Complete Example
+
+Here's a complete registration form example using annotations:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.annotations.*;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class RegisterPojo {
+    @Required
+    @Email
+    private String email;
+
+    @Required
+    @NumberPattern(patter = "(xxxx) xx-xx-xxx")
+    private String phone;
+
+    @Required
+    @MinLength(min = 12)
+    @MustContainMin(min = 3, alphabet = ALPHA_LOWERCASE)
+    @MustContainMin(min = 3, alphabet = ALPHA_UPPERCASE)
+    @MustContainMin(min = 3, alphabet = NUMBER)
+    @MustContainMin(min = 3, alphabet = "@~_/")
+    @Compare(compareWith = "pswConfirmation")
+    private String psw;
+
+    private String pswConfirmation;
+
+    public RegisterPojo(String email, String phone, String psw, String pswConfirmation) {
+        this.email = email;
+        this.phone = phone;
+        this.psw = psw;
+        this.pswConfirmation = pswConfirmation;
+    }
+
+    // Getters and setters...
+}
+
+public class Register {
+    private RegisterPojo register = new RegisterPojo("", "", "", "");
+
+    public void submit() {
+        try {
+            Validator.validOrFail(register);
+            // Proceed with registration
+        } catch (InvalidEvaluationException e) {
+            switch (e.getKey()) {
+                case "email":
+                    // Handle email error
+                    break;
+                case "psw":
+                    // Handle password error
+                    break;
+                case "phone":
+                    // Handle phone error
+                    break;
+            }
+        }
+    }
+}
+```
+
+## Important Notes
+
+<Warning>
+  Annotations simplify rule chaining, but do not allow adding custom validation rules. If you need custom logic, use programmatic validation with the `Validator.Builder()` approach.
+</Warning>
+
+<Info>
+  Annotations are evaluated in the order they appear on the field. When a validation fails, remaining annotations on that field are not evaluated.
+</Info>
+
+## Next Steps
+
+- Explore [String Annotations](./string-annotations) for text validation
+- Learn about [Numeric Annotations](./numeric-annotations) for number validation
+- Discover [Format Annotations](./format-annotations) for specialized formats
+- Check out the [Alphabets utility](/api/utilities/alphabets) for character sets

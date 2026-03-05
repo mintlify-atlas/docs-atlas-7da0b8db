@@ -1,0 +1,285 @@
+---
+title: Installation
+description: Add Validator to your Java project using Maven, Gradle, or direct JAR download
+---
+
+## Requirements
+
+Before installing Validator, ensure your environment meets these requirements:
+
+- **Java Development Kit (JDK) 11** or higher
+- **Maven 3.x** or **Gradle 6.x+** (if using dependency management)
+
+<Note>
+  Validator has zero external dependencies (except for testing). It's a lightweight library that won't bloat your application.
+</Note>
+
+## Installation Methods
+
+<Tabs>
+  <Tab title="Maven">
+    Add the following dependency to your `pom.xml` file:
+
+    ```xml pom.xml
+    <dependency>
+        <groupId>io.github.ApamateSoft</groupId>
+        <artifactId>Validator</artifactId>
+        <version>1.3.2</version>
+    </dependency>
+    ```
+
+    Then run:
+
+    ```bash
+    mvn clean install
+    ```
+
+    <Accordion title="Full pom.xml example">
+      ```xml pom.xml
+      <?xml version="1.0" encoding="UTF-8"?>
+      <project xmlns="http://maven.apache.org/POM/4.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+               http://maven.apache.org/xsd/maven-4.0.0.xsd">
+          <modelVersion>4.0.0</modelVersion>
+
+          <groupId>com.example</groupId>
+          <artifactId>my-application</artifactId>
+          <version>1.0.0</version>
+
+          <properties>
+              <maven.compiler.source>11</maven.compiler.source>
+              <maven.compiler.target>11</maven.compiler.target>
+          </properties>
+
+          <dependencies>
+              <dependency>
+                  <groupId>io.github.ApamateSoft</groupId>
+                  <artifactId>Validator</artifactId>
+                  <version>1.3.2</version>
+              </dependency>
+          </dependencies>
+      </project>
+      ```
+    </Accordion>
+  </Tab>
+
+  <Tab title="Gradle">
+    Add the following to your `build.gradle` file:
+
+    ```groovy build.gradle
+    dependencies {
+        implementation 'io.github.ApamateSoft:Validator:1.3.2'
+    }
+    ```
+
+    For Gradle Kotlin DSL (`build.gradle.kts`):
+
+    ```kotlin build.gradle.kts
+    dependencies {
+        implementation("io.github.ApamateSoft:Validator:1.3.2")
+    }
+    ```
+
+    Then run:
+
+    ```bash
+    gradle build
+    ```
+
+    <Accordion title="Full build.gradle example">
+      ```groovy build.gradle
+      plugins {
+          id 'java'
+      }
+
+      group = 'com.example'
+      version = '1.0.0'
+
+      sourceCompatibility = '11'
+      targetCompatibility = '11'
+
+      repositories {
+          mavenCentral()
+      }
+
+      dependencies {
+          implementation 'io.github.ApamateSoft:Validator:1.3.2'
+      }
+      ```
+    </Accordion>
+  </Tab>
+
+  <Tab title="JAR Download">
+    Download the JAR file directly from Maven Central:
+
+    <Card title="Download Validator JAR" icon="download" href="https://repo1.maven.org/maven2/io/github/ApamateSoft/Validator/1.3.2/Validator-1.3.2.jar">
+      Validator-1.3.2.jar (Click to download)
+    </Card>
+
+    After downloading:
+
+    <Steps>
+      <Step title="Add to classpath">
+        Place the JAR file in your project's `lib` directory
+      </Step>
+
+      <Step title="Configure your IDE">
+        Add the JAR to your project's build path:
+        - **IntelliJ IDEA**: File → Project Structure → Libraries → + → Java
+        - **Eclipse**: Right-click project → Build Path → Add External Archives
+        - **VS Code**: Update `.classpath` or `java.project.referencedLibraries`
+      </Step>
+
+      <Step title="Compile with classpath">
+        If compiling from command line:
+        ```bash
+        javac -cp "lib/Validator-1.3.2.jar" YourClass.java
+        java -cp "lib/Validator-1.3.2.jar:." YourClass
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Verify Installation
+
+Create a simple test class to verify Validator is properly installed:
+
+<CodeGroup>
+```java HelloValidator.java
+import io.github.ApamateSoft.validator.Validator;
+
+public class HelloValidator {
+    public static void main(String[] args) {
+        // Create a simple validator
+        Validator validator = new Validator.Builder()
+            .required()
+            .minLength(3)
+            .build();
+        
+        // Test validation
+        String testValue = "Hello";
+        boolean isValid = validator.isValid(testValue);
+        
+        System.out.println("Is '" + testValue + "' valid? " + isValid);
+    }
+}
+```
+
+```bash Expected Output
+Is 'Hello' valid? true
+```
+</CodeGroup>
+
+### Compile and Run
+
+<Tabs>
+  <Tab title="Maven">
+    ```bash
+    mvn compile exec:java -Dexec.mainClass="HelloValidator"
+    ```
+  </Tab>
+
+  <Tab title="Gradle">
+    ```bash
+    gradle run
+    ```
+  </Tab>
+
+  <Tab title="Command Line">
+    ```bash
+    javac -cp "lib/Validator-1.3.2.jar" HelloValidator.java
+    java -cp "lib/Validator-1.3.2.jar:." HelloValidator
+    ```
+  </Tab>
+</Tabs>
+
+If you see the output `Is 'Hello' valid? true`, installation was successful!
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="ClassNotFoundException: Validator not found">
+    **Cause**: The Validator library is not on the classpath.
+
+    **Solution**:
+    - Maven: Run `mvn clean install` to download dependencies
+    - Gradle: Run `gradle build --refresh-dependencies`
+    - JAR: Verify the JAR file path in your classpath configuration
+  </Accordion>
+
+  <Accordion title="UnsupportedClassVersionError">
+    **Cause**: You're using Java 10 or lower. Validator requires Java 11+.
+
+    **Solution**: Upgrade to Java 11 or higher:
+    ```bash
+    java -version  # Check your Java version
+    ```
+
+    Update your `pom.xml` or `build.gradle`:
+    ```xml
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+    ```
+  </Accordion>
+
+  <Accordion title="Dependency resolution failed">
+    **Cause**: Maven Central repository is not configured or network issues.
+
+    **Solution**:
+    - Verify internet connection
+    - Check repository configuration in `settings.xml` (Maven) or `build.gradle` (Gradle)
+    - Try clearing cache: `mvn clean` or `gradle clean`
+  </Accordion>
+
+  <Accordion title="Cannot resolve symbol 'Validator'">
+    **Cause**: IDE hasn't indexed the new dependency.
+
+    **Solution**:
+    - IntelliJ IDEA: File → Invalidate Caches / Restart
+    - Eclipse: Project → Clean
+    - VS Code: Reload window (Ctrl+Shift+P → "Reload Window")
+  </Accordion>
+</AccordionGroup>
+
+## Version Information
+
+<Note>
+  **Current Version**: 1.3.2
+
+  **Release Notes**:
+  - The `validOrFail` and `compareOrFail` methods now require a `key` parameter
+  - Fixed `instanceof` check for `InvalidEvaluationException`
+  - Updated message for `name` rule and `@Name` annotation
+</Note>
+
+### Checking for Updates
+
+Visit the [Maven Central Repository](https://search.maven.org/artifact/io.github.ApamateSoft/Validator) to check for the latest version.
+
+## IDE Integration
+
+<CardGroup cols={3}>
+  <Card title="IntelliJ IDEA" icon="code">
+    Auto-import works out of the box with Maven/Gradle projects
+  </Card>
+  
+  <Card title="Eclipse" icon="circle">
+    Use m2e (Maven) or Buildship (Gradle) plugins
+  </Card>
+  
+  <Card title="VS Code" icon="code">
+    Install the Java Extension Pack for dependency management
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+Now that Validator is installed, you're ready to start validating strings!
+
+<Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+  Learn how to create your first validator and start validating strings in minutes
+</Card>

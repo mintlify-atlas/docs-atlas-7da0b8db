@@ -1,0 +1,447 @@
+---
+title: "Exceptions"
+description: "Understanding and handling validation exceptions"
+---
+
+The Validator library uses exceptions to signal validation failures. When a validation rule fails, an `InvalidEvaluationException` is thrown, providing detailed information about what went wrong.
+
+## InvalidEvaluationException
+
+This exception is thrown when a validation rule fails during the `verify()` method call.
+
+### Package
+```java
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+```
+
+### Constructor
+```java
+public InvalidEvaluationException(String key, String value, String message)
+```
+
+**Parameters:**
+- `key` - The field name/key that failed validation
+- `value` - The actual value that was being validated
+- `message` - The error message describing why validation failed
+
+### Methods
+
+#### getKey()
+Returns the field name/key that failed validation.
+
+```java
+public String getKey()
+```
+
+**Example:**
+```java
+try {
+    validator.verify("email", "invalid-email");
+} catch (InvalidEvaluationException e) {
+    System.out.println(e.getKey()); // Output: "email"
+}
+```
+
+#### getValue()
+Returns the actual value that failed validation.
+
+```java
+public String getValue()
+```
+
+**Example:**
+```java
+try {
+    validator.verify("email", "invalid-email");
+} catch (InvalidEvaluationException e) {
+    System.out.println(e.getValue()); // Output: "invalid-email"
+}
+```
+
+#### getMessage()
+Returns the error message specified in the validation rule.
+
+```java
+public String getMessage()
+```
+
+**Example:**
+```java
+try {
+    Validator validator = new Validator()
+        .email("Please enter a valid email address");
+    
+    validator.verify("email", "invalid-email");
+} catch (InvalidEvaluationException e) {
+    System.out.println(e.getMessage()); // Output: "Please enter a valid email address"
+}
+```
+
+## Basic Exception Handling
+
+### Single Field Validation
+
+```java
+Validator emailValidator = new Validator()
+    .required("Email is required")
+    .email("Invalid email format");
+
+try {
+    emailValidator.verify("email", userInput);
+    // Validation passed
+    System.out.println("Email is valid!");
+} catch (InvalidEvaluationException e) {
+    // Validation failed
+    System.out.println("Error: " + e.getMessage());
+}
+```
+
+### Multiple Fields Validation
+
+```java
+Validator usernameValidator = new Validator()
+    .required("Username is required")
+    .rangeLength(3, 20, "Username must be 3-20 characters");
+
+Validator passwordValidator = new Validator()
+    .required("Password is required")
+    .minLength(8, "Password must be at least 8 characters");
+
+try {
+    usernameValidator.verify("username", username);
+    passwordValidator.verify("password", password);
+    // Both validations passed
+    createAccount(username, password);
+} catch (InvalidEvaluationException e) {
+    System.err.println(e.getKey() + ": " + e.getMessage());
+}
+```
+
+## Collecting All Errors
+
+When validating multiple fields, you may want to collect all validation errors instead of stopping at the first failure.
+
+```java
+public Map<String, String> validateForm(
+    String email,
+    String username,
+    String password,
+    String confirmPassword
+) {
+    Map<String, String> errors = new HashMap<>();
+    
+    // Validate email
+    Validator emailValidator = new Validator()
+        .required("Email is required")
+        .email("Invalid email format");
+    try {
+        emailValidator.verify("email", email);
+    } catch (InvalidEvaluationException e) {
+        errors.put(e.getKey(), e.getMessage());
+    }
+    
+    // Validate username
+    Validator usernameValidator = new Validator()
+        .required("Username is required")
+        .rangeLength(3, 20, "Username must be 3-20 characters")
+        .onlyAlphanumeric("Username can only contain letters and numbers");
+    try {
+        usernameValidator.verify("username", username);
+    } catch (InvalidEvaluationException e) {
+        errors.put(e.getKey(), e.getMessage());
+    }
+    
+    // Validate password
+    Validator passwordValidator = new Validator()
+        .required("Password is required")
+        .minLength(8, "Password must be at least 8 characters")
+        .mustContainOne(Alphabets.NUMBER, "Password must contain a number")
+        .mustContainOne(Alphabets.ALPHA_UPPERCASE, "Password must contain an uppercase letter");
+    try {
+        passwordValidator.verify("password", password);
+    } catch (InvalidEvaluationException e) {
+        errors.put(e.getKey(), e.getMessage());
+    }
+    
+    // Validate password confirmation
+    if (password != null && !password.equals(confirmPassword)) {
+        errors.put("confirmPassword", "Passwords do not match");
+    }
+    
+    return errors;
+}
+
+// Usage
+Map<String, String> errors = validateForm(email, username, password, confirmPassword);
+if (errors.isEmpty()) {
+    // All validations passed
+    createAccount();
+} else {
+    // Show errors to user
+    errors.forEach((field, message) -> {
+        System.out.println(field + ": " + message);
+    });
+}
+```
+
+## Android/UI Integration
+
+### Displaying Errors in Forms
+
+```java
+public void validateAndSubmit() {
+    EditText emailField = findViewById(R.id.emailField);
+    EditText passwordField = findViewById(R.id.passwordField);
+    
+    String email = emailField.getText().toString();
+    String password = passwordField.getText().toString();
+    
+    // Clear previous errors
+    emailField.setError(null);
+    passwordField.setError(null);
+    
+    boolean hasErrors = false;
+    
+    // Validate email
+    Validator emailValidator = new Validator()
+        .required("Email is required")
+        .email("Invalid email format");
+    try {
+        emailValidator.verify("email", email);
+    } catch (InvalidEvaluationException e) {
+        emailField.setError(e.getMessage());
+        hasErrors = true;
+    }
+    
+    // Validate password
+    Validator passwordValidator = new Validator()
+        .required("Password is required")
+        .minLength(8, "Password must be at least 8 characters");
+    try {
+        passwordValidator.verify("password", password);
+    } catch (InvalidEvaluationException e) {
+        passwordField.setError(e.getMessage());
+        hasErrors = true;
+    }
+    
+    if (!hasErrors) {
+        // Submit form
+        submitLogin(email, password);
+    }
+}
+```
+
+### Real-time Validation
+
+```java
+EditText emailField = findViewById(R.id.emailField);
+emailField.addTextChangedListener(new TextWatcher() {
+    @Override
+    public void afterTextChanged(Editable s) {
+        String email = s.toString();
+        
+        Validator emailValidator = new Validator()
+            .email("Invalid email format");
+        
+        try {
+            if (!email.isEmpty()) {
+                emailValidator.verify("email", email);
+                emailField.setError(null);
+            }
+        } catch (InvalidEvaluationException e) {
+            emailField.setError(e.getMessage());
+        }
+    }
+    
+    @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+    
+    @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count) {}
+});
+```
+
+## API Response Handling
+
+### REST API Validation
+
+```java
+@PostMapping("/api/register")
+public ResponseEntity<?> register(@RequestBody RegistrationRequest request) {
+    Map<String, String> errors = new HashMap<>();
+    
+    // Validate email
+    Validator emailValidator = new Validator()
+        .required("Email is required")
+        .email("Invalid email format");
+    try {
+        emailValidator.verify("email", request.getEmail());
+    } catch (InvalidEvaluationException e) {
+        errors.put(e.getKey(), e.getMessage());
+    }
+    
+    // Validate username
+    Validator usernameValidator = new Validator()
+        .required("Username is required")
+        .rangeLength(3, 20, "Username must be 3-20 characters");
+    try {
+        usernameValidator.verify("username", request.getUsername());
+    } catch (InvalidEvaluationException e) {
+        errors.put(e.getKey(), e.getMessage());
+    }
+    
+    if (!errors.isEmpty()) {
+        return ResponseEntity.badRequest().body(errors);
+    }
+    
+    // Process registration
+    return ResponseEntity.ok("Registration successful");
+}
+```
+
+### JSON Error Response
+
+```java
+public class ValidationErrorResponse {
+    private Map<String, String> errors;
+    
+    public ValidationErrorResponse(InvalidEvaluationException e) {
+        this.errors = new HashMap<>();
+        this.errors.put(e.getKey(), e.getMessage());
+    }
+    
+    public ValidationErrorResponse(Map<String, String> errors) {
+        this.errors = errors;
+    }
+    
+    public Map<String, String> getErrors() {
+        return errors;
+    }
+}
+
+// Usage
+try {
+    validator.verify("email", email);
+    return ResponseEntity.ok(result);
+} catch (InvalidEvaluationException e) {
+    return ResponseEntity.badRequest().body(new ValidationErrorResponse(e));
+}
+```
+
+## Logging and Debugging
+
+### Detailed Error Logging
+
+```java
+try {
+    validator.verify("email", userInput);
+} catch (InvalidEvaluationException e) {
+    // Log all details
+    logger.error("Validation failed:");
+    logger.error("  Field: " + e.getKey());
+    logger.error("  Value: " + e.getValue());
+    logger.error("  Error: " + e.getMessage());
+    
+    // Or as a single line
+    logger.error(String.format(
+        "Validation failed for field '%s' with value '%s': %s",
+        e.getKey(), e.getValue(), e.getMessage()
+    ));
+}
+```
+
+### Custom Exception Wrapper
+
+```java
+public class ValidationException extends RuntimeException {
+    private final Map<String, String> errors;
+    
+    public ValidationException(InvalidEvaluationException e) {
+        super(e.getMessage());
+        this.errors = new HashMap<>();
+        this.errors.put(e.getKey(), e.getMessage());
+    }
+    
+    public ValidationException(Map<String, String> errors) {
+        super("Multiple validation errors occurred");
+        this.errors = errors;
+    }
+    
+    public Map<String, String> getErrors() {
+        return errors;
+    }
+}
+
+// Usage
+try {
+    validator.verify("email", email);
+} catch (InvalidEvaluationException e) {
+    throw new ValidationException(e);
+}
+```
+
+## Best Practices
+
+### 1. Provide Clear Error Messages
+
+```java
+// Good - Clear and actionable
+Validator validator = new Validator()
+    .email("Please enter a valid email address (e.g., user@example.com)");
+
+// Avoid - Vague messages
+Validator validator = new Validator()
+    .email("Invalid input");
+```
+
+### 2. Validate Early
+
+```java
+// Validate input as soon as it's received
+public void setEmail(String email) throws InvalidEvaluationException {
+    Validator emailValidator = new Validator()
+        .required("Email is required")
+        .email("Invalid email format");
+    
+    emailValidator.verify("email", email);
+    this.email = email;
+}
+```
+
+### 3. Handle Exceptions at the Right Level
+
+```java
+// Don't catch exceptions too early
+public void processForm() {
+    try {
+        validateEmail(email);
+        validatePassword(password);
+        submitForm();
+    } catch (InvalidEvaluationException e) {
+        // Handle all validation errors together
+        showErrorDialog(e.getMessage());
+    }
+}
+```
+
+### 4. Use Specific Catch Blocks
+
+```java
+try {
+    validator.verify("email", email);
+    saveToDatabase(email);
+} catch (InvalidEvaluationException e) {
+    // Handle validation errors
+    showValidationError(e.getMessage());
+} catch (SQLException e) {
+    // Handle database errors
+    showDatabaseError();
+}
+```
+
+## Related
+
+- [Validator Class](/api/validator) - Main validation class with validOrFail methods
+- [String Rules](/api/rules/string-rules) - String validation rules
+- [Format Rules](/api/rules/format-rules) - Format validation rules
+- [Error Handling Guide](/guides/error-handling) - Exception-based validation patterns

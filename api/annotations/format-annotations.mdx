@@ -1,0 +1,684 @@
+---
+title: Format Annotations
+description: Annotations for validating specialized formats like email, dates, URLs, and IP addresses
+---
+
+## Overview
+
+Format annotations in Validator help you validate String fields that must conform to specific formats such as email addresses, dates, times, URLs, and IP addresses. These annotations handle complex validation patterns so you don't have to write regular expressions manually.
+
+## Email Validation
+
+### @Email
+
+Validates that the String has a valid email format.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Email invalid"
+
+**Example:**
+```java
+@Email
+private String email;
+
+// With custom message
+@Required(message = "Email is required")
+@Email(message = "Please enter a valid email address")
+private String contactEmail;
+```
+
+**Valid examples:**
+- `example@mail.com`
+- `user.name@example.co.uk`
+- `test+tag@domain.com`
+
+## Date and Time Validation
+
+### @Date
+
+Validates that the String matches a specified date format.
+
+**Attributes:**
+- `format` (required): Date format pattern
+- `message` (optional): Error message
+
+**Default Message:** "The date does not match the format %s"
+
+**Example:**
+```java
+@Date(format = "dd/MM/yyyy")
+private String birthDate;
+
+// With custom message
+@Required
+@Date(format = "yyyy-MM-dd", message = "Date must be in YYYY-MM-DD format")
+private String appointmentDate;
+
+// US date format
+@Date(format = "MM/dd/yyyy", message = "Use MM/DD/YYYY format")
+private String eventDate;
+
+// With time
+@Date(format = "dd/MM/yyyy HH:mm:ss")
+private String timestamp;
+```
+
+**Common format patterns:**
+- `dd/MM/yyyy` → 25/12/2023
+- `yyyy-MM-dd` → 2023-12-25
+- `MM/dd/yyyy` → 12/25/2023
+- `dd-MMM-yyyy` → 25-Dec-2023
+
+---
+
+### @ExpirationDate
+
+Validates that the date has not expired (is not before the current date).
+
+**Attributes:**
+- `format` (required): Date format pattern
+- `message` (optional): Error message
+
+**Default Message:** "Expired date"
+
+**Example:**
+```java
+@Date(format = "MM/yyyy")
+@ExpirationDate(format = "MM/yyyy", message = "Card has expired")
+private String cardExpiration;
+
+// Full date format
+@Date(format = "yyyy-MM-dd")
+@ExpirationDate(format = "yyyy-MM-dd", message = "License has expired")
+private String licenseExpiry;
+```
+
+<Warning>
+  This annotation uses the device's current date for comparison. Ensure the system clock is accurate.
+</Warning>
+
+<Note>
+  It is recommended to use `@Date` before `@ExpirationDate` to ensure the date format is valid first.
+</Note>
+
+---
+
+### @MinAge
+
+Validates that the period from the entered date to the current date is greater than or equal to a minimum age.
+
+**Attributes:**
+- `format` (required): Date format pattern
+- `age` (required): Minimum age in years
+- `message` (optional): Error message
+
+**Default Message:** "Must be at least %d years old"
+
+**Example:**
+```java
+@Date(format = "dd/MM/yyyy")
+@MinAge(format = "dd/MM/yyyy", age = 18)
+private String birthDate;
+
+// With custom message
+@Required
+@Date(format = "yyyy-MM-dd")
+@MinAge(format = "yyyy-MM-dd", age = 21, message = "You must be at least 21 years old")
+private String dateOfBirth;
+
+// Senior validation
+@Date(format = "MM/dd/yyyy")
+@MinAge(format = "MM/dd/yyyy", age = 65, message = "Must be 65 or older for senior discount")
+private String seniorBirthDate;
+```
+
+<Warning>
+  This annotation uses the device's current date for age calculation. Ensure the system clock is accurate.
+</Warning>
+
+<Note>
+  It is recommended to use `@Date` before `@MinAge` to ensure the date format is valid first.
+</Note>
+
+---
+
+### @Time
+
+Validates that the String is in a valid time format (both 12-hour and 24-hour formats).
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Time invalid"
+
+**Example:**
+```java
+@Time
+private String appointmentTime;
+
+// With custom message
+@Required
+@Time(message = "Please enter a valid time")
+private String meetingTime;
+```
+
+**Valid formats:**
+- 24-hour: `00:00`, `12:30`, `23:59`
+- 12-hour: `12:59 am`, `1:00 pm`, `01:00AM`, `01:00pm`, `01:00PM`
+
+---
+
+### @Time12
+
+Validates that the String is in 12-hour time format.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Invalid 12 hour format"
+
+**Example:**
+```java
+@Time12
+private String appointmentTime;
+
+// With custom message
+@Required
+@Time12(message = "Use 12-hour format (e.g., 2:30 PM)")
+private String meetingTime;
+```
+
+**Valid examples:**
+- `12:59 am`
+- `1:00 pm`
+- `01:00AM`
+- `01:00pm`
+- `11:45 PM`
+
+---
+
+### @Time24
+
+Validates that the String is in 24-hour time format.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Invalid 24 hour format"
+
+**Example:**
+```java
+@Time24
+private String departureTime;
+
+// With custom message
+@Required
+@Time24(message = "Use 24-hour format (e.g., 14:30)")
+private String arrivalTime;
+```
+
+**Valid examples:**
+- `00:00`
+- `13:00`
+- `23:59`
+
+## URL Validation
+
+### @Link
+
+Validates that the String is in a valid link/URL format (any protocol).
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Invalid link"
+
+**Example:**
+```java
+@Link
+private String website;
+
+// With custom message
+@Link(message = "Please enter a valid URL")
+private String profileUrl;
+```
+
+**Valid examples:**
+- `www.google.com`
+- `http://google.com`
+- `https://google.com`
+- `http://example.com/api/auth?name=Jesus`
+
+---
+
+### @HttpLink
+
+Validates that the String is a link with HTTP protocol.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Invalid http link"
+
+**Example:**
+```java
+@HttpLink
+private String apiEndpoint;
+
+// With custom message
+@HttpLink(message = "URL must use HTTP protocol")
+private String httpUrl;
+```
+
+**Valid examples:**
+- `http://google.com`
+- `http://example.com/path`
+- `http://api.example.com:8080/endpoint`
+
+---
+
+### @HttpsLink
+
+Validates that the String is a link with HTTPS protocol.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Invalid https link"
+
+**Example:**
+```java
+@HttpsLink
+private String secureUrl;
+
+// With custom message
+@Required
+@HttpsLink(message = "URL must use secure HTTPS protocol")
+private String paymentGateway;
+```
+
+**Valid examples:**
+- `https://google.com`
+- `https://secure.example.com/payment`
+- `https://api.example.com:443/auth`
+
+---
+
+### @WwwLink
+
+Validates that the String is a link with WWW prefix.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Invalid www link"
+
+**Example:**
+```java
+@WwwLink
+private String website;
+
+// With custom message
+@WwwLink(message = "Website must start with www")
+private String companyWebsite;
+```
+
+**Valid examples:**
+- `www.google.com`
+- `www.example.com/page`
+
+## IP Address Validation
+
+### @Ip
+
+Validates that the String is in a valid IP address format (IPv4 or IPv6).
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Invalid IP"
+
+**Example:**
+```java
+@Ip
+private String serverAddress;
+
+// With custom message
+@Required
+@Ip(message = "Please enter a valid IP address")
+private String deviceIp;
+```
+
+**Valid examples:**
+- IPv4: `127.0.0.1`, `192.168.0.109`, `10.0.0.1`
+- IPv6: `ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff`, `ffff::`, `ffff::ffff`, `ffff:ffff::ffff`
+
+---
+
+### @Ipv4
+
+Validates that the String is in IPv4 format.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Invalid IPv4"
+
+**Example:**
+```java
+@Ipv4
+private String serverIp;
+
+// With custom message
+@Required
+@Ipv4(message = "Please enter a valid IPv4 address")
+private String gatewayAddress;
+```
+
+**Valid examples:**
+- `127.0.0.1`
+- `192.168.0.109`
+- `10.0.0.1`
+- `255.255.255.255`
+
+---
+
+### @Ipv6
+
+Validates that the String is in IPv6 format.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Invalid IPv6"
+
+**Example:**
+```java
+@Ipv6
+private String serverIpv6;
+
+// With custom message
+@Ipv6(message = "Please enter a valid IPv6 address")
+private String deviceAddress;
+```
+
+**Valid examples:**
+- `ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff`
+- `ffff::`
+- `ffff::ffff`
+- `ffff:ffff::ffff`
+- `::1` (localhost)
+
+## Custom Pattern Validation
+
+### @RegExp
+
+Validates that the String matches a custom regular expression.
+
+**Attributes:**
+- `regExp` (required): Regular expression pattern
+- `message` (optional): Error message
+
+**Default Message:** "The value does not match the regular expression %s"
+
+**Example:**
+```java
+@RegExp(regExp = "^[A-Z]{2}\\d{6}$")
+private String passportNumber;
+
+// With custom message
+@RegExp(regExp = "^\\d{3}-\\d{2}-\\d{4}$", message = "SSN format: XXX-XX-XXXX")
+private String ssn;
+
+// Complex pattern
+@RegExp(
+    regExp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$",
+    message = "Password must contain uppercase, lowercase, and numbers"
+)
+private String password;
+```
+
+<Note>
+  The Validator library provides predefined regular expressions in the `RegularExpressions` class for common patterns.
+</Note>
+
+**Using predefined regular expressions:**
+```java
+import static io.github.ApamateSoft.validator.utils.RegularExpressions.*;
+
+@RegExp(regExp = EMAIL)
+private String email;
+
+@RegExp(regExp = NAME)
+private String fullName;
+
+@RegExp(regExp = IPV4)
+private String serverIp;
+```
+
+For more information, see the [Regular Expressions utility documentation](/api/utilities/regular-expressions).
+
+---
+
+### @Compare
+
+Validates that the String value matches the value of another field in the same class.
+
+**Attributes:**
+- `compareWith` (required): Name of the field to compare with
+- `message` (optional): Error message
+
+**Default Message:** "Not match"
+
+**Example:**
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class RegistrationForm {
+    @Required(message = "Password is required")
+    @MinLength(min = 8, message = "Password must be at least 8 characters")
+    @MustContainOne(alphabet = ALPHA_UPPERCASE, message = "Requires uppercase letter")
+    @MustContainOne(alphabet = NUMBER, message = "Requires at least one number")
+    @Compare(compareWith = "passwordConfirm", message = "Passwords do not match")
+    private String password;
+    
+    private String passwordConfirm;
+
+    // Constructors, getters, setters...
+}
+```
+
+<Note>
+  The `compareWith` attribute must match the exact field name. This is commonly used for password confirmation fields.
+</Note>
+
+**Additional examples:**
+```java
+// Email confirmation
+@Required
+@Email
+@Compare(compareWith = "emailConfirm", message = "Email addresses do not match")
+private String email;
+private String emailConfirm;
+
+// Username confirmation
+@Required
+@Compare(compareWith = "usernameConfirm")
+private String username;
+private String usernameConfirm;
+```
+
+## Complete Examples
+
+### User Registration Form
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class UserRegistration {
+    @Required(message = "Email is required")
+    @Email(message = "Invalid email format")
+    private String email;
+
+    @Required(message = "Birth date is required")
+    @Date(format = "dd/MM/yyyy", message = "Date format: DD/MM/YYYY")
+    @MinAge(format = "dd/MM/yyyy", age = 18, message = "Must be at least 18 years old")
+    private String birthDate;
+
+    @Required(message = "Password is required")
+    @MinLength(min = 8, message = "Password must be at least 8 characters")
+    @MustContainMin(min = 1, alphabet = ALPHA_UPPERCASE, message = "Requires uppercase")
+    @MustContainMin(min = 1, alphabet = ALPHA_LOWERCASE, message = "Requires lowercase")
+    @MustContainMin(min = 1, alphabet = NUMBER, message = "Requires number")
+    @Compare(compareWith = "passwordConfirm", message = "Passwords do not match")
+    private String password;
+    
+    private String passwordConfirm;
+
+    @HttpsLink(message = "Website must use HTTPS")
+    private String website;
+
+    // Constructors, getters, setters...
+}
+```
+
+### Payment Form
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+
+public class PaymentInfo {
+    @Required(message = "Card number is required")
+    @NumberPattern(patter = "xxxx-xxxx-xxxx-xxxx", message = "Card format: 1234-5678-9012-3456")
+    private String cardNumber;
+
+    @Required(message = "Expiration date is required")
+    @Date(format = "MM/yyyy", message = "Format: MM/YYYY")
+    @ExpirationDate(format = "MM/yyyy", message = "Card has expired")
+    private String expirationDate;
+
+    @Required(message = "CVV is required")
+    @Length(length = 3, message = "CVV must be 3 digits")
+    @OnlyNumbers(message = "CVV must be numeric")
+    private String cvv;
+
+    @Required(message = "Email is required")
+    @Email(message = "Invalid email address")
+    private String billingEmail;
+
+    // Constructors, getters, setters...
+}
+```
+
+### Event Booking Form
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+
+public class EventBooking {
+    @Required(message = "Event date is required")
+    @Date(format = "yyyy-MM-dd", message = "Date format: YYYY-MM-DD")
+    private String eventDate;
+
+    @Required(message = "Start time is required")
+    @Time24(message = "Use 24-hour format (e.g., 14:30)")
+    private String startTime;
+
+    @Required(message = "End time is required")
+    @Time24(message = "Use 24-hour format (e.g., 16:30)")
+    private String endTime;
+
+    @Required(message = "Contact email is required")
+    @Email(message = "Invalid email address")
+    private String contactEmail;
+
+    @Link(message = "Invalid URL")
+    private String eventWebsite;
+
+    // Constructors, getters, setters...
+}
+```
+
+### Server Configuration Form
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+
+public class ServerConfig {
+    @Required(message = "Server IP is required")
+    @Ipv4(message = "Invalid IPv4 address")
+    private String serverIp;
+
+    @Ipv6(message = "Invalid IPv6 address")
+    private String serverIpv6;
+
+    @Required(message = "API endpoint is required")
+    @HttpsLink(message = "API must use HTTPS")
+    private String apiEndpoint;
+
+    @Required(message = "Port is required")
+    @Number(message = "Port must be a number")
+    @RangeValue(min = 1.0, max = 65535.0, message = "Port must be between 1 and 65535")
+    private String port;
+
+    @Time24(message = "Use 24-hour format")
+    private String maintenanceTime;
+
+    // Constructors, getters, setters...
+}
+```
+
+## Tips and Best Practices
+
+### Date Validation Order
+
+```java
+// Good: Validate format before checking expiration
+@Required
+@Date(format = "MM/yyyy")
+@ExpirationDate(format = "MM/yyyy")
+private String cardExpiry;
+```
+
+### Age Validation
+
+```java
+// Good: Validate format before checking age
+@Required
+@Date(format = "dd/MM/yyyy")
+@MinAge(format = "dd/MM/yyyy", age = 18)
+private String birthDate;
+```
+
+### Password Confirmation
+
+```java
+// Validate password first, then compare
+@Required
+@MinLength(min = 8)
+@Compare(compareWith = "passwordConfirm")
+private String password;
+
+private String passwordConfirm;
+```
+
+### URL Security
+
+```java
+// Prefer HTTPS for security
+@Required
+@HttpsLink(message = "Use secure HTTPS connection")
+private String paymentUrl;
+```
+
+## Next Steps
+
+- Learn about [String Annotations](./string-annotations)
+- Explore [Numeric Annotations](./numeric-annotations)
+- Read the [Annotations Overview](./overview)
+- Check out the [Regular Expressions utility](/api/utilities/regular-expressions)
+- View the [Validator class documentation](/api/validator)

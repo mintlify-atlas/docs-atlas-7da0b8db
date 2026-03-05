@@ -1,0 +1,495 @@
+---
+title: String Rules
+description: Validation rules for string length, content, and character composition
+---
+
+## Overview
+
+String rules validate the length, content, and character composition of String values. These rules are essential for ensuring text inputs meet specific requirements.
+
+## Length Validation
+
+### required
+
+Validates that the String is not null and not empty.
+
+```java
+public void required(String message)
+public void required()
+```
+
+<ParamField path="message" type="String">
+  Custom error message (optional - uses default if not provided)
+</ParamField>
+
+**Example:**
+
+```java
+Validator validator = new Validator();
+validator.required(); // Uses default message
+validator.required("This field is required"); // Custom message
+
+validator.isValid("");     // false
+validator.isValid(null);   // false
+validator.isValid("text"); // true
+```
+
+**Builder Usage:**
+
+```java
+Validator validator = new Validator.Builder()
+    .required("Name is required")
+    .build();
+```
+
+---
+
+### length
+
+Validates that the String has an exact length of characters.
+
+```java
+public void length(int length, String message)
+public void length(int length)
+```
+
+<ParamField path="length" type="int" required>
+  Exact number of characters required
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for length value)
+</ParamField>
+
+**Example:**
+
+```java
+validator.length(5); // Must be exactly 5 characters
+validator.length(10, "Must be exactly %s characters");
+
+validator.isValid("12345");   // true
+validator.isValid("1234");    // false
+validator.isValid("123456");  // false
+```
+
+---
+
+### minLength
+
+Validates that the String length is not less than the minimum.
+
+```java
+public void minLength(int min, String message)
+public void minLength(int min)
+```
+
+<ParamField path="min" type="int" required>
+  Minimum number of characters allowed
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for min value)
+</ParamField>
+
+**Example:**
+
+```java
+validator.minLength(3);
+validator.minLength(8, "Password must be at least %s characters");
+
+validator.isValid("ab");      // false
+validator.isValid("abc");     // true
+validator.isValid("abcdef");  // true
+```
+
+---
+
+### maxLength
+
+Validates that the String length is not greater than the maximum.
+
+```java
+public void maxLength(int max, String message)
+public void maxLength(int max)
+```
+
+<ParamField path="max" type="int" required>
+  Maximum number of characters allowed
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for max value)
+</ParamField>
+
+**Example:**
+
+```java
+validator.maxLength(10);
+validator.maxLength(255, "Cannot exceed %s characters");
+
+validator.isValid("short");           // true
+validator.isValid("exactly ten");     // true (10 chars)
+validator.isValid("this is too long"); // false (16 chars)
+```
+
+---
+
+### rangeLength
+
+Validates that the String length is within the specified range (inclusive).
+
+```java
+public void rangeLength(int min, int max, String message)
+public void rangeLength(int min, int max)
+```
+
+<ParamField path="min" type="int" required>
+  Minimum number of characters
+</ParamField>
+
+<ParamField path="max" type="int" required>
+  Maximum number of characters
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholders for min and max values)
+</ParamField>
+
+**Example:**
+
+```java
+validator.rangeLength(3, 10);
+validator.rangeLength(8, 20, "Must be between %s and %s characters");
+
+validator.isValid("ab");       // false (too short)
+validator.isValid("abc");      // true
+validator.isValid("abcdefgh"); // true
+validator.isValid("this is way too long"); // false (too long)
+```
+
+## Character Content Validation
+
+### onlyLetters
+
+Validates that the String contains only letters (English alphabet A-Z, a-z).
+
+```java
+public void onlyLetters(String message)
+public void onlyLetters()
+```
+
+**Note:** Only recognizes English alphabet letters. For other alphabets, use `shouldOnlyContain()`.
+
+**Example:**
+
+```java
+validator.onlyLetters();
+validator.onlyLetters("Only alphabetic characters allowed");
+
+validator.isValid("Hello");    // true
+validator.isValid("Hello123"); // false
+validator.isValid("Hello!");   // false
+```
+
+---
+
+### onlyNumbers
+
+Validates that the String contains only numeric characters (0-9).
+
+```java
+public void onlyNumbers(String message)
+public void onlyNumbers()
+```
+
+**Example:**
+
+```java
+validator.onlyNumbers();
+validator.onlyNumbers("Only digits allowed");
+
+validator.isValid("12345");   // true
+validator.isValid("123.45");  // false (contains period)
+validator.isValid("123abc");  // false
+```
+
+---
+
+### onlyAlphanumeric
+
+Validates that the String contains only alphanumeric characters (A-Z, a-z, 0-9).
+
+```java
+public void onlyAlphanumeric(String message)
+public void onlyAlphanumeric()
+```
+
+**Note:** Only recognizes English alphabet. For other alphabets, use `shouldOnlyContain()`.
+
+**Example:**
+
+```java
+validator.onlyAlphanumeric();
+validator.onlyAlphanumeric("Only letters and numbers allowed");
+
+validator.isValid("User123");   // true
+validator.isValid("User_123");  // false (underscore not allowed)
+validator.isValid("User 123");  // false (space not allowed)
+```
+
+---
+
+### shouldOnlyContain
+
+Validates that the String contains only characters from the specified alphabet.
+
+```java
+public void shouldOnlyContain(String alphabet, String message)
+public void shouldOnlyContain(String alphabet)
+```
+
+<ParamField path="alphabet" type="String" required>
+  String containing all allowed characters
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for alphabet)
+</ParamField>
+
+**Example:**
+
+```java
+// Allow only vowels
+validator.shouldOnlyContain("aeiouAEIOU");
+validator.shouldOnlyContain("aeiou", "Only vowels (%s) are allowed");
+
+// Allow custom alphabet for usernames
+validator.shouldOnlyContain(
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-",
+    "Username can only contain letters, numbers, hyphens, and underscores"
+);
+
+validator.isValid("aeiou");  // true
+validator.isValid("hello");  // false (contains 'h', 'l')
+```
+
+---
+
+### notContain
+
+Validates that the String does not contain any characters from the specified alphabet.
+
+```java
+public void notContain(String alphabet, String message)
+public void notContain(String alphabet)
+```
+
+<ParamField path="alphabet" type="String" required>
+  String containing forbidden characters
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for alphabet)
+</ParamField>
+
+**Example:**
+
+```java
+// Disallow special characters
+validator.notContain("!@#$%^&*()");
+validator.notContain("<>'\"", "HTML characters are not allowed");
+
+validator.isValid("Hello123");  // true
+validator.isValid("Hello!");    // false (contains !)
+```
+
+**Annotation Usage (Multiple):**
+
+```java
+public class User {
+    @NotContain(alphabet = "<>")
+    @NotContain(alphabet = "'\"") 
+    @NotContain(alphabet = "&")
+    private String username;
+}
+```
+
+---
+
+### mustContainOne
+
+Validates that the String contains at least one character from the specified alphabet.
+
+```java
+public void mustContainOne(String alphabet, String message)
+public void mustContainOne(String alphabet)
+```
+
+<ParamField path="alphabet" type="String" required>
+  String containing desired characters (at least one must be present)
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for alphabet)
+</ParamField>
+
+**Example:**
+
+```java
+// Require at least one uppercase letter
+validator.mustContainOne("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+validator.mustContainOne("ABCDEFGHIJKLMNOPQRSTUVWXYZ", 
+    "Must contain at least one uppercase letter");
+
+// Require at least one special character
+validator.mustContainOne("!@#$%^&*()", 
+    "Must contain at least one special character");
+
+validator.isValid("password");  // false
+validator.isValid("Password");  // true (contains 'P')
+```
+
+**Password Strength Example:**
+
+```java
+Validator passwordValidator = new Validator.Builder()
+    .required()
+    .minLength(8)
+    .mustContainOne("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "Must contain uppercase")
+    .mustContainOne("abcdefghijklmnopqrstuvwxyz", "Must contain lowercase")
+    .mustContainOne("0123456789", "Must contain a number")
+    .mustContainOne("!@#$%^&*", "Must contain special character")
+    .build();
+```
+
+---
+
+### mustContainMin
+
+Validates that the String contains at least a minimum number of characters from the specified alphabet.
+
+```java
+public void mustContainMin(int min, String alphabet, String message)
+public void mustContainMin(int min, String alphabet)
+```
+
+<ParamField path="min" type="int" required>
+  Minimum number of characters required from the alphabet
+</ParamField>
+
+<ParamField path="alphabet" type="String" required>
+  String containing the characters to count
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholders for min and alphabet)
+</ParamField>
+
+**Example:**
+
+```java
+// Require at least 2 numbers
+validator.mustContainMin(2, "0123456789");
+validator.mustContainMin(3, "0123456789", 
+    "Must contain at least %s numbers");
+
+// Require at least 2 special characters
+validator.mustContainMin(2, "!@#$%^&*()",
+    "Must contain at least %s special characters (%s)");
+
+validator.isValid("Password1");   // false (only 1 number)
+validator.isValid("Password12");  // true (2 numbers)
+validator.isValid("Pass123word"); // true (3 numbers)
+```
+
+**Annotation Usage (Multiple):**
+
+```java
+public class SecurePassword {
+    @MustContainMin(min = 2, alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    @MustContainMin(min = 2, alphabet = "0123456789")
+    @MustContainMin(min = 1, alphabet = "!@#$%^&*()")
+    private String password;
+}
+```
+
+---
+
+### name
+
+Validates that the String is a proper name (English names only).
+
+```java
+public void name(String message)
+public void name()
+```
+
+**Notes:**
+- Capitalization is ignored
+- Only validates proper names in English
+- For names in other languages, use `regExp()` with a custom pattern
+
+**Example:**
+
+```java
+validator.name();
+validator.name("Please enter a valid name");
+
+validator.isValid("John");          // true
+validator.isValid("John Smith");    // true
+validator.isValid("Mary-Jane");     // true
+validator.isValid("O'Brien");       // true
+validator.isValid("John123");       // false
+validator.isValid("@John");         // false
+```
+
+## Complete Examples
+
+### Username Validation
+
+```java
+Validator usernameValidator = new Validator.Builder()
+    .required("Username is required")
+    .minLength(3, "Username must be at least 3 characters")
+    .maxLength(20, "Username cannot exceed 20 characters")
+    .shouldOnlyContain(
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_",
+        "Username can only contain letters, numbers, and underscores"
+    )
+    .build();
+```
+
+### Strong Password Validation
+
+```java
+Validator passwordValidator = new Validator();
+passwordValidator.required("Password is required");
+passwordValidator.minLength(12, "Password must be at least 12 characters");
+passwordValidator.maxLength(128, "Password cannot exceed 128 characters");
+passwordValidator.mustContainOne("ABCDEFGHIJKLMNOPQRSTUVWXYZ", 
+    "Password must contain at least one uppercase letter");
+passwordValidator.mustContainOne("abcdefghijklmnopqrstuvwxyz", 
+    "Password must contain at least one lowercase letter");
+passwordValidator.mustContainMin(2, "0123456789", 
+    "Password must contain at least 2 numbers");
+passwordValidator.mustContainOne("!@#$%^&*()_+-=[]{}|;:,.<>?", 
+    "Password must contain at least one special character");
+passwordValidator.notContain(" ", "Password cannot contain spaces");
+```
+
+### Display Name Validation
+
+```java
+Validator displayNameValidator = new Validator.Builder()
+    .required()
+    .rangeLength(2, 50)
+    .notContain("<>'\"", "Cannot contain HTML characters")
+    .build();
+```
+
+## See Also
+
+- [Validator](/api/validator) - Main validation class
+- [Numeric Rules](/api/rules/numeric-rules) - Number validation rules
+- [Format Rules](/api/rules/format-rules) - Format validation rules
+- [Comparison Rules](/api/rules/comparison-rules) - Field comparison

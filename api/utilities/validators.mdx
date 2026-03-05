@@ -1,0 +1,626 @@
+---
+title: "Validators"
+description: "Static validation methods that underpin validation rules"
+---
+
+The `Validators` class contains static methods that perform the actual validation logic used by the validation rules. These methods can be called directly for simple boolean validation checks without needing to create a `Validator` instance.
+
+## Import
+
+```java
+import io.github.ApamateSoft.validator.utils.Validators;
+```
+
+## When to Use
+
+Use these static methods when you:
+- Need a simple true/false validation result
+- Want to perform validation without exception handling
+- Need to build conditional logic based on validation results
+- Want to create custom validation logic
+
+**For form validation with error messages, use the [Validator](/api/validator) class with validation rules instead.**
+
+## Length Validators
+
+### required
+Validates that the String is not null and not empty.
+
+```java
+public static boolean required(String evaluate)
+```
+
+**Example:**
+```java
+if (Validators.required(username)) {
+    // Username is provided
+} else {
+    // Username is missing
+}
+```
+
+### length
+Validates that the String has an exact length of characters.
+
+```java
+public static boolean length(String evaluate, int length)
+```
+
+**Example:**
+```java
+boolean isValidZip = Validators.length(zipCode, 5);  // Must be exactly 5 characters
+boolean isValidState = Validators.length(stateCode, 2);  // Must be exactly 2 characters
+```
+
+### minLength
+Validates that the length of the String is not less than the minimum.
+
+```java
+public static boolean minLength(String evaluate, int min)
+```
+
+**Example:**
+```java
+boolean isValidPassword = Validators.minLength(password, 8);  // At least 8 characters
+```
+
+### maxLength
+Validates that the length of the String is not greater than the maximum.
+
+```java
+public static boolean maxLength(String evaluate, int max)
+```
+
+**Example:**
+```java
+boolean isValidUsername = Validators.maxLength(username, 20);  // Max 20 characters
+```
+
+### rangeLength
+Validates that the length of the String is within the specified range.
+
+```java
+public static boolean rangeLength(String evaluate, int min, int max)
+```
+
+**Example:**
+```java
+boolean isValidUsername = Validators.rangeLength(username, 3, 20);  // Between 3-20 characters
+```
+
+## Format Validators
+
+### regExp
+Validates that the String matches a regular expression pattern.
+
+```java
+public static boolean regExp(String evaluate, String regExp)
+```
+
+**Example:**
+```java
+boolean isNumeric = Validators.regExp(input, "^\\d+$");
+boolean isValidEmail = Validators.regExp(email, RegularExpression.EMAIL);
+```
+
+### email
+Validates that the String has a valid email format.
+
+```java
+public static boolean email(String evaluate)
+```
+
+**Example:**
+```java
+if (Validators.email("user@example.com")) {
+    // Valid email
+}
+```
+
+### number
+Validates that the String is in numeric format (includes integers, decimals, and negative values).
+
+```java
+public static boolean number(String evaluate)
+```
+
+**Example:**
+```java
+boolean isNumber = Validators.number("123.45");   // true
+boolean isNumber = Validators.number("-99");      // true
+boolean isNumber = Validators.number("abc");      // false
+```
+
+### link
+Validates that the String is a valid URL (any format: www, http, https).
+
+```java
+public static boolean link(String evaluate)
+```
+
+**Example:**
+```java
+boolean isValidUrl = Validators.link("https://example.com");
+```
+
+### wwwLink
+Validates that the String is a URL starting with www.
+
+```java
+public static boolean wwwLink(String evaluate)
+```
+
+**Example:**
+```java
+boolean isWwwUrl = Validators.wwwLink("www.example.com");  // true
+```
+
+### httpLink
+Validates that the String is a URL starting with http://
+
+```java
+public static boolean httpLink(String evaluate)
+```
+
+**Example:**
+```java
+boolean isHttpUrl = Validators.httpLink("http://example.com");  // true
+```
+
+### httpsLink
+Validates that the String is a URL starting with https://
+
+```java
+public static boolean httpsLink(String evaluate)
+```
+
+**Example:**
+```java
+boolean isSecureUrl = Validators.httpsLink("https://example.com");  // true
+```
+
+### ip
+Validates that the String is a valid IP address (IPv4 or IPv6).
+
+```java
+public static boolean ip(String evaluate)
+```
+
+**Example:**
+```java
+boolean isValidIp = Validators.ip("192.168.1.1");  // true
+boolean isValidIp = Validators.ip("ffff::");       // true
+```
+
+### ipv4
+Validates that the String is a valid IPv4 address.
+
+```java
+public static boolean ipv4(String evaluate)
+```
+
+**Example:**
+```java
+boolean isValidIpv4 = Validators.ipv4("192.168.1.1");  // true
+boolean isValidIpv4 = Validators.ipv4("256.1.1.1");    // false
+```
+
+### ipv6
+Validates that the String is a valid IPv6 address.
+
+```java
+public static boolean ipv6(String evaluate)
+```
+
+**Example:**
+```java
+boolean isValidIpv6 = Validators.ipv6("ffff::ffff");  // true
+```
+
+### time
+Validates that the String is in time format (12-hour or 24-hour).
+
+```java
+public static boolean time(String evaluate)
+```
+
+**Example:**
+```java
+boolean isValidTime = Validators.time("14:30");     // true
+boolean isValidTime = Validators.time("2:30 PM");   // true
+```
+
+### time12
+Validates that the String is in 12-hour time format with AM/PM.
+
+```java
+public static boolean time12(String evaluate)
+```
+
+**Example:**
+```java
+boolean isValid = Validators.time12("2:30 PM");   // true
+boolean isValid = Validators.time12("14:30");     // false
+```
+
+### time24
+Validates that the String is in 24-hour time format.
+
+```java
+public static boolean time24(String evaluate)
+```
+
+**Example:**
+```java
+boolean isValid = Validators.time24("14:30");     // true
+boolean isValid = Validators.time24("2:30 PM");   // false
+```
+
+### numberPattern
+Validates that the String matches a pattern where 'x' represents variable digits.
+
+```java
+public static boolean numberPattern(String evaluate, String pattern)
+```
+
+**Example:**
+```java
+// Pattern: +xx (xxx) xxx-xx-xx
+boolean isValid = Validators.numberPattern("+12 (345) 678-90-12", "+xx (xxx) xxx-xx-xx");  // true
+boolean isValid = Validators.numberPattern("+xx (345) 678-90-12", "+xx (xxx) xxx-xx-xx");  // true
+boolean isValid = Validators.numberPattern("+xx (xxx) xxx-xx-xx", "+xx (xxx) xxx-xx-xx");  // true
+
+// Social Security Number pattern: xxx-xx-xxxx
+boolean isValidSSN = Validators.numberPattern("123-45-6789", "xxx-xx-xxxx");  // true
+```
+
+### date
+Validates that the String matches a specified date format.
+
+```java
+public static boolean date(String evaluate, String format)
+```
+
+**Example:**
+```java
+boolean isValidDate = Validators.date("25/12/2023", "dd/MM/yyyy");  // true
+boolean isValidDate = Validators.date("2023-12-25", "yyyy-MM-dd");  // true
+boolean isValidDate = Validators.date("31/02/2023", "dd/MM/yyyy");  // false (invalid date)
+```
+
+### name
+Validates that the String is a proper name (English letters only, spaces allowed).
+
+```java
+public static boolean name(String evaluate)
+```
+
+**Example:**
+```java
+boolean isValidName = Validators.name("John Doe");      // true
+boolean isValidName = Validators.name("Mary Ann");      // true
+boolean isValidName = Validators.name("John123");       // false
+```
+
+**Note:** For names in other languages (e.g., Spanish with accents), use `regExp` with `RegularExpression.NAME_ES`.
+
+## Content Validators
+
+### shouldOnlyContain
+Validates that the String only contains characters from the specified alphabet.
+
+```java
+public static boolean shouldOnlyContain(String evaluate, String alphabet)
+```
+
+**Example:**
+```java
+boolean isValid = Validators.shouldOnlyContain("abc123", Alphabets.ALPHA_NUMERIC);  // true
+boolean isValid = Validators.shouldOnlyContain("abc_123", Alphabets.ALPHA_NUMERIC); // false
+```
+
+### onlyNumbers
+Validates that the String contains only numeric characters.
+
+```java
+public static boolean onlyNumbers(String evaluate)
+```
+
+**Example:**
+```java
+boolean isOnlyNumbers = Validators.onlyNumbers("12345");   // true
+boolean isOnlyNumbers = Validators.onlyNumbers("123.45");  // false
+```
+
+### onlyLetters
+Validates that the String contains only English letters.
+
+```java
+public static boolean onlyLetters(String evaluate)
+```
+
+**Example:**
+```java
+boolean isOnlyLetters = Validators.onlyLetters("Hello");    // true
+boolean isOnlyLetters = Validators.onlyLetters("Hello123"); // false
+```
+
+### onlyAlphanumeric
+Validates that the String contains only alphanumeric characters (English letters and numbers).
+
+```java
+public static boolean onlyAlphanumeric(String evaluate)
+```
+
+**Example:**
+```java
+boolean isAlphanumeric = Validators.onlyAlphanumeric("User123");   // true
+boolean isAlphanumeric = Validators.onlyAlphanumeric("User_123");  // false
+```
+
+### notContain
+Validates that the String does not contain any characters from the specified alphabet.
+
+```java
+public static boolean notContain(String evaluate, String alphabet)
+```
+
+**Example:**
+```java
+boolean isValid = Validators.notContain("User123", "!@#$%");  // true (no special chars)
+boolean isValid = Validators.notContain("User@123", "!@#$%"); // false (contains @)
+```
+
+### mustContainOne
+Validates that the String contains at least one character from the specified alphabet.
+
+```java
+public static boolean mustContainOne(String evaluate, String alphabet)
+```
+
+**Example:**
+```java
+boolean hasNumber = Validators.mustContainOne("Password1", Alphabets.NUMBER);  // true
+boolean hasSpecial = Validators.mustContainOne("Password", "!@#$%");          // false
+```
+
+### mustContainMin
+Validates that the String contains at least a minimum number of characters from the specified alphabet.
+
+```java
+public static boolean mustContainMin(String evaluate, int min, String alphabet)
+```
+
+**Example:**
+```java
+// Password must contain at least 2 numbers
+boolean isValid = Validators.mustContainMin("Pass12word", 2, Alphabets.NUMBER);  // true
+boolean isValid = Validators.mustContainMin("Pass1word", 2, Alphabets.NUMBER);   // false
+```
+
+## Value Validators
+
+### maxValue
+Validates that the numeric value is not greater than the maximum.
+
+```java
+public static boolean maxValue(String evaluate, double condition)
+```
+
+**Example:**
+```java
+boolean isValid = Validators.maxValue("99", 100);      // true
+boolean isValid = Validators.maxValue("101", 100);     // false
+boolean isValid = Validators.maxValue("50.5", 100.0);  // true
+```
+
+### minValue
+Validates that the numeric value is not less than the minimum.
+
+```java
+public static boolean minValue(String evaluate, double condition)
+```
+
+**Example:**
+```java
+boolean isValid = Validators.minValue("18", 18);    // true
+boolean isValid = Validators.minValue("17", 18);    // false
+boolean isValid = Validators.minValue("-5", -10);   // true
+```
+
+### rangeValue
+Validates that the numeric value is within the specified range.
+
+```java
+public static boolean rangeValue(String evaluate, double min, double max)
+```
+
+**Example:**
+```java
+boolean isValid = Validators.rangeValue("50", 0, 100);     // true
+boolean isValid = Validators.rangeValue("150", 0, 100);    // false
+boolean isValid = Validators.rangeValue("25.5", 0, 100);   // true
+```
+
+## Date Validators
+
+### minAge
+Validates that the age calculated from the date is greater than or equal to the minimum age.
+
+```java
+public static boolean minAge(String evaluate, String format, int age)
+```
+
+**Example:**
+```java
+// Check if user is at least 18 years old
+boolean isAdult = Validators.minAge("01/01/2000", "dd/MM/yyyy", 18);
+
+// Check if user is at least 21
+boolean canDrink = Validators.minAge("15/03/2000", "dd/MM/yyyy", 21);
+```
+
+**Note:** This method uses the current system date for calculation.
+
+### expirationDate
+Validates that the date has not expired (is in the past).
+
+```java
+public static boolean expirationDate(String evaluate, String format)
+```
+
+**Example:**
+```java
+// Check if credit card has expired
+boolean hasExpired = Validators.expirationDate("12/2023", "MM/yyyy");
+
+// Check if coupon has expired
+boolean isExpired = Validators.expirationDate("31/12/2023", "dd/MM/yyyy");
+```
+
+**Note:** This method uses the current system date for comparison.
+
+## Practical Examples
+
+### Building Custom Validation Logic
+```java
+public boolean isValidUsername(String username) {
+    if (!Validators.required(username)) {
+        return false;
+    }
+    if (!Validators.rangeLength(username, 3, 20)) {
+        return false;
+    }
+    if (!Validators.onlyAlphanumeric(username)) {
+        return false;
+    }
+    return true;
+}
+```
+
+### Conditional Validation
+```java
+public void processInput(String input, String type) {
+    if (type.equals("email")) {
+        if (Validators.email(input)) {
+            // Process email
+        } else {
+            // Show email error
+        }
+    } else if (type.equals("phone")) {
+        if (Validators.numberPattern(input, "+x (xxx) xxx-xx-xx")) {
+            // Process phone
+        } else {
+            // Show phone error
+        }
+    }
+}
+```
+
+### Password Strength Checker
+```java
+public int checkPasswordStrength(String password) {
+    int strength = 0;
+    
+    if (Validators.minLength(password, 8)) strength++;
+    if (Validators.mustContainOne(password, Alphabets.ALPHA_LOWERCASE)) strength++;
+    if (Validators.mustContainOne(password, Alphabets.ALPHA_UPPERCASE)) strength++;
+    if (Validators.mustContainOne(password, Alphabets.NUMBER)) strength++;
+    if (Validators.mustContainOne(password, "!@#$%^&*()")) strength++;
+    
+    return strength; // 0 = weak, 5 = very strong
+}
+```
+
+### Age-Restricted Content
+```java
+public boolean canAccessContent(String birthdate) {
+    // User must be at least 18 years old
+    return Validators.minAge(birthdate, "yyyy-MM-dd", 18);
+}
+```
+
+### Form Field Validation
+```java
+public Map<String, String> validateRegistrationForm(
+    String email,
+    String username,
+    String password,
+    String confirmPassword
+) {
+    Map<String, String> errors = new HashMap<>();
+    
+    if (!Validators.email(email)) {
+        errors.put("email", "Invalid email address");
+    }
+    
+    if (!Validators.rangeLength(username, 3, 20)) {
+        errors.put("username", "Username must be 3-20 characters");
+    }
+    
+    if (!Validators.minLength(password, 8)) {
+        errors.put("password", "Password must be at least 8 characters");
+    }
+    
+    if (!password.equals(confirmPassword)) {
+        errors.put("confirmPassword", "Passwords do not match");
+    }
+    
+    return errors;
+}
+```
+
+### Real-time Input Validation
+```java
+public void onTextChanged(String text, String fieldType) {
+    switch (fieldType) {
+        case "email":
+            if (Validators.email(text)) {
+                showSuccessIcon();
+            } else {
+                showErrorIcon();
+            }
+            break;
+        case "zipCode":
+            if (Validators.onlyNumbers(text) && Validators.length(text, 5)) {
+                showSuccessIcon();
+            } else {
+                showErrorIcon();
+            }
+            break;
+    }
+}
+```
+
+## Combining with Validation Rules
+
+While these static methods are useful for quick checks, consider using the [Validator](/api/validator) class when you need:
+- Error messages
+- Multiple validation rules on the same field
+- Exception-based validation flow
+
+```java
+// Using static methods (returns boolean)
+boolean isValid = Validators.email("user@example.com");
+
+// Using validation rules (throws exception with message)
+Validator emailValidator = new Validator.Builder()
+    .required("Email is required")
+    .email("Invalid email address")
+    .build();
+
+try {
+    emailValidator.validOrFail("email", "user@example.com");
+} catch (InvalidEvaluationException e) {
+    System.out.println(e.getMessage());
+}
+```
+
+## Related
+
+- [Validator](/api/validator) - High-level validation with error messages
+- [String Rules](/api/rules/string-rules) - String validation rules
+- [Format Rules](/api/rules/format-rules) - Format validation rules
+- [Alphabets](/api/utilities/alphabets) - Predefined character sets
+- [Regular Expressions](/api/utilities/regular-expressions) - Predefined regex patterns
+- [Exceptions](/api/exceptions) - Exception handling in validation

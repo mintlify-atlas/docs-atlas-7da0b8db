@@ -1,0 +1,324 @@
+---
+title: Validation Approaches
+description: Learn the three approaches for validating Strings in the Validator library
+---
+
+Validator offers three distinct approaches for handling validation, each suited to different development styles and use cases. Choose the approach that best fits your application architecture.
+
+## Event-Driven Validation
+
+The event-driven approach uses callbacks to handle validation failures. This is ideal for UI applications where you need to display error messages dynamically.
+
+### Using onInvalidEvaluation
+
+Register an event handler that gets invoked when any rule fails:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+
+public class EventDrivenExample {
+
+    private Validator validator = new Validator.Builder()
+        .required()
+        .minLength(6)
+        .onlyNumbers()
+        .build();
+    
+    public EventDrivenExample() {
+        // Event is invoked only if validation fails
+        validator.onInvalidEvaluation(message -> {
+            System.out.println("Validation error: " + message);
+            // Update UI with error message
+            // showErrorDialog(message);
+        });
+    }
+  
+    public void validateInput(String input) {
+        if (validator.isValid(input)) {
+            // Proceed with valid input
+            System.out.println("Input is valid!");
+        }
+    }
+
+}
+```
+
+### Checking Validation Results
+
+The `isValid()` method returns a boolean, allowing you to control flow:
+
+```java
+Validator emailValidator = new Validator.Builder()
+    .required("Email is required")
+    .email("Invalid email format")
+    .build();
+
+emailValidator.onInvalidEvaluation(message -> {
+    showError(message);
+});
+
+if (emailValidator.isValid(userEmail)) {
+    // Continue with registration
+    registerUser(userEmail);
+}
+```
+
+### Comparing Two Strings
+
+Useful for password confirmation fields:
+
+```java
+Validator passwordValidator = new Validator.Builder()
+    .required("Password is required")
+    .minLength(8, "Password must be at least 8 characters")
+    .setNotMatchMessage("Passwords do not match")
+    .build();
+
+passwordValidator.onInvalidEvaluation(message -> {
+    showPasswordError(message);
+});
+
+if (passwordValidator.isMatch(password, passwordConfirm)) {
+    // Passwords match and pass all rules
+    savePassword(password);
+}
+```
+
+<Note>
+  When a rule fails, the `onInvalidEvaluation` event is triggered with the associated error message, and remaining rules are not evaluated.
+</Note>
+
+## Exception-Based Validation
+
+The exception-based approach throws `InvalidEvaluationException` when validation fails. This is ideal for API endpoints and service layers where you want to handle errors through exception handling mechanisms.
+
+### Using validOrFail
+
+Instead of returning a boolean, this method throws an exception:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+public class ExceptionBasedExample {
+
+    Validator validator = new Validator.Builder()
+        .required("Username is required")
+        .minLength(3, "Username must be at least 3 characters")
+        .onlyAlphanumeric("Username must contain only letters and numbers")
+        .build();
+
+    private void createUser(String username) {
+        try {
+            validator.validOrFail("username", username);
+            // If we reach here, validation passed
+            saveUserToDatabase(username);
+        } catch (InvalidEvaluationException e) {
+            // Access validation details
+            System.out.println("Field: " + e.getKey());        // "username"
+            System.out.println("Value: " + e.getValue());      // The input value
+            System.out.println("Error: " + e.getMessage());    // Error message
+        }
+    }
+
+}
+```
+
+### Exception Properties
+
+The `InvalidEvaluationException` contains three key properties:
+
+- **key**: Identifier for the field being validated (useful when validating multiple fields)
+- **value**: The actual String that failed validation
+- **message**: The error message from the failed rule
+
+### Comparing with compareOrFail
+
+```java
+Validator passwordValidator = new Validator.Builder()
+    .required()
+    .minLength(12)
+    .build();
+
+private void changePassword(String newPassword, String confirmPassword) {
+    try {
+        passwordValidator.compareOrFail("newPassword", newPassword, confirmPassword);
+        // Both match and pass all validation rules
+        updatePassword(newPassword);
+    } catch (InvalidEvaluationException e) {
+        handlePasswordError(e);
+    }
+}
+```
+
+<Warning>
+  As of version 1.3.2, the `validOrFail` and `compareOrFail` methods require a `key` parameter to identify the field being validated.
+</Warning>
+
+## Annotation-Based Validation
+
+The annotation-based approach uses Java annotations directly on class fields. This is ideal for data transfer objects (DTOs), form models, and entity validation.
+
+### Annotating Fields
+
+Apply validation annotations directly to your class fields:
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class UserRegistration {
+
+    @Required(message = "Email is required")
+    @Email(message = "Invalid email format")
+    private String email;
+
+    @Required(message = "Password is required")
+    @MinLength(min = 8, message = "Password must be at least 8 characters")
+    @MustContainMin(min = 3, alphabet = ALPHA_LOWERCASE, message = "At least 3 lowercase letters required")
+    @MustContainMin(min = 3, alphabet = NUMBER, message = "At least 3 numbers required")
+    @MustContainOne(alphabet = ALPHA_UPPERCASE, message = "At least one uppercase letter required")
+    @MustContainOne(alphabet = "@#*-", message = "At least one special character required")
+    @Compare(compareWith = "passwordConfirm", message = "Passwords do not match")
+    private String password;
+    
+    private String passwordConfirm;
+
+    @Required
+    @NumberPattern(patter = "(xxxx) xxx xx xx")
+    private String phone;
+
+    // Constructor, getters, setters...
+}
+```
+
+### Validating Annotated Classes
+
+Use the static `Validator.validOrFail()` method:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+public class RegistrationService {
+
+    public void registerUser(UserRegistration registration) {
+        try {
+            Validator.validOrFail(registration);
+            // All fields passed validation
+            saveUser(registration);
+        } catch (InvalidEvaluationException e) {
+            // Handle validation error
+            String fieldName = e.getKey();      // Field that failed (e.g., "email")
+            String errorMessage = e.getMessage(); // Error message
+            
+            switch (fieldName) {
+                case "email":
+                    handleEmailError(errorMessage);
+                    break;
+                case "password":
+                    handlePasswordError(errorMessage);
+                    break;
+                case "phone":
+                    handlePhoneError(errorMessage);
+                    break;
+            }
+        }
+    }
+
+}
+```
+
+### Annotation Evaluation Order
+
+Annotations are evaluated in the order they appear on the field, from top to bottom. When one fails, evaluation stops:
+
+```java
+@Required              // Checked first
+@MinLength(min = 8)    // Checked second
+@Email                 // Checked third
+private String email;
+```
+
+<Info>
+  Annotations simplify validation definition but do not allow custom lambda-based rules. For custom logic, use the Builder pattern approach.
+</Info>
+
+## Choosing the Right Approach
+
+<Tabs>
+  <Tab title="Event-Driven">
+    **Best for:**
+    - Desktop and mobile UI applications
+    - Real-time form validation
+    - When you need to display errors immediately
+    
+    **Advantages:**
+    - Non-blocking validation flow
+    - Clean separation of validation and error handling
+    - Easy to integrate with UI components
+  </Tab>
+  
+  <Tab title="Exception-Based">
+    **Best for:**
+    - REST API endpoints
+    - Service layer validation
+    - Batch processing
+    
+    **Advantages:**
+    - Centralizes error handling
+    - Works well with exception handling frameworks
+    - Provides detailed error context
+  </Tab>
+  
+  <Tab title="Annotation-Based">
+    **Best for:**
+    - DTOs and POJOs
+    - Form beans
+    - Data models with static validation rules
+    
+    **Advantages:**
+    - Declarative and readable
+    - Validation rules live with data
+    - Less boilerplate code
+  </Tab>
+</Tabs>
+
+## Combining Approaches
+
+You can mix approaches in the same application. For example:
+
+```java
+// Use annotations for static field validation
+public class UserProfile {
+    @Required
+    @Email
+    private String email;
+    
+    @Required
+    @MinLength(min = 2)
+    private String firstName;
+}
+
+// Use Builder pattern for dynamic validation
+public class UserService {
+    private Validator customValidator = new Validator.Builder()
+        .rule("Username already exists", username -> !usernameExists(username))
+        .rule("Username contains profanity", username -> !containsProfanity(username))
+        .build();
+    
+    public void createUser(UserProfile profile, String username) throws InvalidEvaluationException {
+        // Validate static fields with annotations
+        Validator.validOrFail(profile);
+        
+        // Validate dynamic rules with custom validator
+        customValidator.validOrFail("username", username);
+        
+        // Proceed with user creation
+    }
+}
+```
+
+<Note>
+  All three approaches use the same underlying validation engine and predefined rules, ensuring consistent behavior across your application.
+</Note>

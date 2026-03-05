@@ -1,97 +1,118 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Validator"
+description: "A powerful Java library for validating strings through chainable rules and annotations"
 ---
 
-## Setting up
+## Welcome to Validator
 
-Get your documentation site up and running in minutes.
+Validator is a flexible and comprehensive Java library that simplifies string validation by allowing you to chain validation rules or use declarative annotations. Whether you're validating form inputs, API requests, or user data, Validator provides an elegant solution with built-in support for common validation scenarios.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
   >
-    Edit your docs locally and preview them in real time.
+    Get up and running with Validator in minutes
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
+    title="Installation"
+    icon="download"
+    href="/installation"
   >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+    Add Validator to your Maven or Gradle project
   </Card>
   <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
+    title="API Reference"
     icon="code"
-    href="/essentials/code"
+    href="/api/validator"
   >
-    Add sample code to demonstrate how to use your product.
+    Explore the complete API documentation
   </Card>
   <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
+    title="View on GitHub"
+    icon="github"
+    href="https://github.com/ApamateSoft/Validator"
   >
-    Display images and other media.
+    Check out the source code and contribute
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
+</CardGroup>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Fluent API" icon="link">
+    Chain validation rules with an intuitive builder pattern for readable, maintainable code
   </Card>
-</Columns>
+  <Card title="27+ Predefined Rules" icon="list-check">
+    Built-in validators for emails, URLs, dates, numbers, IP addresses, and more
+  </Card>
+  <Card title="Annotation Support" icon="at">
+    Use declarative annotations on your model fields for clean, framework-style validation
+  </Card>
+  <Card title="Custom Rules" icon="wrench">
+    Create your own validation logic with lambda expressions or rule objects
+  </Card>
+  <Card title="Error Handling" icon="circle-exclamation">
+    Choose between event-driven callbacks or exception-based error handling
+  </Card>
+  <Card title="Localization" icon="language">
+    Built-in support for English and Spanish with customizable messages
+  </Card>
+</CardGroup>
 
-## Need inspiration?
+## Quick Example
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+Here's how easy it is to validate a string with Validator:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+
+Validator emailValidator = new Validator.Builder()
+    .required()
+    .email()
+    .build();
+
+if (emailValidator.isValid("user@example.com")) {
+    // Valid email
+}
+```
+
+Or use annotations for declarative validation:
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+
+public class User {
+    @Required
+    @Email
+    private String email;
+    
+    @Required
+    @MinLength(min = 8)
+    @MustContainMin(min = 1, condition = "0123456789")
+    private String password;
+}
+```
+
+## Getting Started
+
+<Steps>
+  <Step title="Install the library">
+    Add Validator to your project using Maven or Gradle
+    
+    [View installation instructions →](/installation)
+  </Step>
+  
+  <Step title="Create your first validator">
+    Build a validator with predefined or custom rules
+    
+    [Follow the quickstart guide →](/quickstart)
+  </Step>
+  
+  <Step title="Explore advanced features">
+    Learn about annotations, localization, and error handling patterns
+    
+    [Read the guides →](/guides/form-validation)
+  </Step>
+</Steps>

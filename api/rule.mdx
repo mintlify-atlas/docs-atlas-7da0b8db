@@ -1,0 +1,251 @@
+---
+title: Rule
+description: Individual validation rule that encapsulates validation logic and error messages
+---
+
+## Overview
+
+The `Rule` class represents a single validation rule within the Validator framework. Each Rule combines a validation function with an associated error message.
+
+## Class Declaration
+
+```java
+public class Rule
+```
+
+## Constructor
+
+### Rule
+
+```java
+public Rule(String message, Validate validate)
+```
+
+Creates a new validation rule.
+
+<ParamField path="message" type="String" required>
+  The error message to display when validation fails
+</ParamField>
+
+<ParamField path="validate" type="Validate" required>
+  The validation function that takes a String and returns true if valid
+</ParamField>
+
+**Example:**
+
+```java
+Rule notEmptyRule = new Rule(
+    "Value cannot be empty",
+    value -> value != null && !value.isEmpty()
+);
+```
+
+## Methods
+
+### validate
+
+```java
+public boolean validate(String evaluate)
+```
+
+Executes the validation logic against the provided String.
+
+<ParamField path="evaluate" type="String" required>
+  The String value to validate
+</ParamField>
+
+**Returns:** `true` if the String passes validation, `false` otherwise
+
+**Example:**
+
+```java
+Rule emailRule = new Rule(
+    "Invalid email format",
+    value -> value.matches("^[A-Za-z0-9+_.-]+@(.+)$")
+);
+
+boolean isValid = emailRule.validate("user@example.com"); // true
+boolean isInvalid = emailRule.validate("invalid-email");  // false
+```
+
+### getMessage
+
+```java
+public String getMessage()
+```
+
+Returns the error message associated with this rule.
+
+**Returns:** The error message String
+
+**Example:**
+
+```java
+if (!rule.validate(input)) {
+    System.err.println(rule.getMessage());
+}
+```
+
+## Functional Interface: Validate
+
+The `Validate` interface is a functional interface used to define validation logic.
+
+```java
+@FunctionalInterface
+public interface Validate {
+    boolean invoke(String value);
+}
+```
+
+This allows you to use lambda expressions, method references, or anonymous classes when creating rules.
+
+## Usage Examples
+
+### Lambda Expression
+
+```java
+Rule rule = new Rule(
+    "Must be at least 5 characters",
+    value -> value.length() >= 5
+);
+```
+
+### Method Reference
+
+```java
+public class CustomValidators {
+    public static boolean isValidUsername(String value) {
+        return value.matches("^[a-zA-Z0-9_]{3,20}$");
+    }
+}
+
+Rule usernameRule = new Rule(
+    "Invalid username format",
+    CustomValidators::isValidUsername
+);
+```
+
+### Complex Validation
+
+```java
+Rule passwordStrengthRule = new Rule(
+    "Password must contain uppercase, lowercase, and numbers",
+    value -> {
+        boolean hasUpper = value.chars().anyMatch(Character::isUpperCase);
+        boolean hasLower = value.chars().anyMatch(Character::isLowerCase);
+        boolean hasDigit = value.chars().anyMatch(Character::isDigit);
+        return hasUpper && hasLower && hasDigit;
+    }
+);
+```
+
+### Chaining Multiple Rules
+
+```java
+List<Rule> passwordRules = Arrays.asList(
+    new Rule("Password is required", value -> value != null && !value.isEmpty()),
+    new Rule("Password must be at least 8 characters", value -> value.length() >= 8),
+    new Rule("Password must contain a number", value -> value.matches(".*\\d.*")),
+    new Rule("Password must contain uppercase", value -> value.matches(".*[A-Z].*"))
+);
+
+for (Rule rule : passwordRules) {
+    if (!rule.validate(password)) {
+        System.err.println(rule.getMessage());
+        break;
+    }
+}
+```
+
+## Integration with Validator
+
+While you can create Rule instances directly, they are typically used within the Validator class:
+
+```java
+Validator validator = new Validator();
+
+// The rule() method creates a Rule internally
+validator.rule("Must not contain spaces", value -> !value.contains(" "));
+validator.rule("Must start with letter", value -> 
+    !value.isEmpty() && Character.isLetter(value.charAt(0))
+);
+```
+
+The Validator class manages a list of Rules and executes them in sequence:
+
+```java
+// Inside Validator class
+private final List<Rule> rules = new ArrayList<>();
+
+public void rule(String message, Validate validate) {
+    rules.add(new Rule(message, validate));
+}
+
+public boolean isValid(String evaluate) {
+    for (Rule rule : rules) {
+        if (!rule.validate(evaluate)) {
+            if (onInvalidEvaluation != null) {
+                onInvalidEvaluation.invoke(rule.getMessage());
+            }
+            return false;
+        }
+    }
+    return true;
+}
+```
+
+## Best Practices
+
+### 1. Clear Error Messages
+
+Provide specific, actionable error messages:
+
+```java
+// Good
+new Rule("Username must be 3-20 characters and contain only letters, numbers, and underscores", ...)
+
+// Less helpful
+new Rule("Invalid username", ...)
+```
+
+### 2. Single Responsibility
+
+Each rule should check one specific condition:
+
+```java
+// Good - separate rules
+new Rule("Password must be at least 8 characters", v -> v.length() >= 8);
+new Rule("Password must contain a number", v -> v.matches(".*\\d.*"));
+
+// Less ideal - combined validation
+new Rule("Password invalid", v -> v.length() >= 8 && v.matches(".*\\d.*"));
+```
+
+### 3. Reusable Validation Functions
+
+Define common validators for reuse:
+
+```java
+public class CommonValidators {
+    public static final Validate NOT_EMPTY = 
+        value -> value != null && !value.isEmpty();
+    
+    public static final Validate ALPHANUMERIC = 
+        value -> value.matches("^[a-zA-Z0-9]+$");
+    
+    public static Validate minLength(int min) {
+        return value -> value.length() >= min;
+    }
+}
+
+// Usage
+Rule rule1 = new Rule("Cannot be empty", CommonValidators.NOT_EMPTY);
+Rule rule2 = new Rule("Must be at least 5 chars", CommonValidators.minLength(5));
+```
+
+## See Also
+
+- [Validator](/api/validator) - Main validation class that uses Rules
+- [String Rules](/api/rules/string-rules) - Predefined string validation rules
+- [Numeric Rules](/api/rules/numeric-rules) - Predefined numeric validation rules
+- [Format Rules](/api/rules/format-rules) - Predefined format validation rules

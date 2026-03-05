@@ -1,0 +1,586 @@
+---
+title: Annotations
+description: Use Java annotations for declarative validation of String fields
+---
+
+Annotation-based validation provides a declarative way to define validation rules directly on your class fields. This approach is perfect for DTOs, POJOs, and data models where validation requirements are well-defined.
+
+## How Annotations Work
+
+Validator scans your class fields at runtime using Java Reflection, evaluating each annotation in the order they appear. When validation fails, an `InvalidEvaluationException` is thrown with details about the failing field.
+
+### Basic Usage
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+
+public class User {
+    
+    @Required
+    @Email
+    private String email;
+    
+    @Required
+    @MinLength(min = 8)
+    private String password;
+    
+    // Constructor, getters, setters...
+}
+```
+
+Validate the object using the static method:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+User user = new User();
+user.setEmail("test@example.com");
+user.setPassword("short");
+
+try {
+    Validator.validOrFail(user);
+    // All fields validated successfully
+} catch (InvalidEvaluationException e) {
+    System.out.println("Field: " + e.getKey());         // "password"
+    System.out.println("Value: " + e.getValue());       // "short"
+    System.out.println("Error: " + e.getMessage());     // "8 or more characters are required"
+}
+```
+
+<Note>
+  Validator only processes fields of type `String`. All other field types are ignored during validation.
+</Note>
+
+## Available Annotations
+
+Validator provides 27 annotations that mirror the predefined rules in the Builder API.
+
+### Existence and Length
+
+<Tabs>
+  <Tab title="@Required">
+    Validates that the String is not null and not empty.
+    
+    ```java
+    @Required
+    private String username;
+    
+    @Required(message = "Email is required")
+    private String email;
+    ```
+  </Tab>
+  
+  <Tab title="@Length">
+    Validates exact character length.
+    
+    ```java
+    @Length(length = 5)
+    private String zipCode;
+    
+    @Length(length = 10, message = "Must be exactly 10 characters")
+    private String accountNumber;
+    ```
+  </Tab>
+  
+  <Tab title="@MinLength">
+    Validates minimum character length.
+    
+    ```java
+    @MinLength(min = 8)
+    private String password;
+    
+    @MinLength(min = 3, message = "At least 3 characters required")
+    private String name;
+    ```
+  </Tab>
+  
+  <Tab title="@MaxLength">
+    Validates maximum character length.
+    
+    ```java
+    @MaxLength(max = 255)
+    private String email;
+    
+    @MaxLength(max = 100, message = "Maximum 100 characters")
+    private String bio;
+    ```
+  </Tab>
+  
+  <Tab title="@RangeLength">
+    Validates that length falls within a range.
+    
+    ```java
+    @RangeLength(min = 3, max = 20)
+    private String username;
+    
+    @RangeLength(min = 10, max = 500, message = "Must be between 10-500 chars")
+    private String description;
+    ```
+  </Tab>
+</Tabs>
+
+### Format Validation
+
+<Tabs>
+  <Tab title="@Email">
+    Validates email format.
+    
+    ```java
+    @Required
+    @Email
+    private String email;
+    
+    @Email(message = "Invalid email address")
+    private String contactEmail;
+    ```
+  </Tab>
+  
+  <Tab title="@Number">
+    Validates numeric format (integers, decimals, negative values).
+    
+    ```java
+    @Number
+    private String price;
+    
+    @Number(message = "Must be a valid number")
+    private String quantity;
+    ```
+  </Tab>
+  
+  <Tab title="@Date">
+    Validates date format.
+    
+    ```java
+    @Date(format = "dd/MM/yyyy")
+    private String birthDate;
+    
+    @Date(format = "yyyy-MM-dd", message = "Invalid date format")
+    private String registrationDate;
+    ```
+  </Tab>
+  
+  <Tab title="@RegExp">
+    Validates against a regular expression.
+    
+    ```java
+    @RegExp(regExp = "[A-Z]{3}[0-9]{3}")
+    private String code;
+    
+    @RegExp(regExp = "^[a-z]+$", message = "Only lowercase letters")
+    private String tag;
+    ```
+  </Tab>
+</Tabs>
+
+### Content Validation
+
+<Tabs>
+  <Tab title="@OnlyNumbers">
+    Validates that String contains only numeric characters.
+    
+    ```java
+    @Required
+    @OnlyNumbers
+    private String zipCode;
+    
+    @OnlyNumbers(message = "Numbers only")
+    private String pin;
+    ```
+  </Tab>
+  
+  <Tab title="@OnlyLetters">
+    Validates that String contains only letters.
+    
+    ```java
+    @OnlyLetters
+    private String firstName;
+    
+    @OnlyLetters(message = "Letters only")
+    private String lastName;
+    ```
+  </Tab>
+  
+  <Tab title="@OnlyAlphanumeric">
+    Validates that String contains only letters and numbers.
+    
+    ```java
+    @OnlyAlphanumeric
+    private String username;
+    
+    @OnlyAlphanumeric(message = "Letters and numbers only")
+    private String productCode;
+    ```
+  </Tab>
+</Tabs>
+
+### Network and Links
+
+```java
+@Link
+private String website;
+
+@WwwLink
+private String companyWebsite;
+
+@HttpLink
+private String httpEndpoint;
+
+@HttpsLink
+private String secureEndpoint;
+
+@Ip
+private String serverIp;
+
+@Ipv4
+private String ipv4Address;
+
+@Ipv6
+private String ipv6Address;
+```
+
+### Time Validation
+
+```java
+@Time
+private String appointmentTime;
+
+@Time12
+private String time12Hour;
+
+@Time24
+private String time24Hour;
+```
+
+## Advanced Annotations
+
+### @NumberPattern
+
+Validates that String matches a pattern where `x` represents numbers:
+
+```java
+@Required
+@NumberPattern(patter = "(xxxx) xxx-xx-xx")
+private String phone;
+
+@NumberPattern(patter = "+xx (xxx) xxx-xx-xx", message = "Invalid phone format")
+private String internationalPhone;
+```
+
+Valid values for pattern `(xxxx) xxx-xx-xx`:
+- `(1234) 567-89-01`
+- `(xxxx) 567-89-01`
+- `(xxxx) xxx-xx-xx`
+
+### @Name
+
+Validates proper name format:
+
+```java
+@Required
+@Name
+private String fullName;
+
+@Name(message = "Invalid name format")
+private String authorName;
+```
+
+Accepts formats like: "Jesus", "Maria", "JOSE", "Jesus Maria", "Maria Jose"
+
+### @Compare
+
+Compares with another field in the same class:
+
+```java
+@Required
+@MinLength(min = 8)
+@Compare(compareWith = "passwordConfirm", message = "Passwords do not match")
+private String password;
+
+private String passwordConfirm;
+```
+
+<Warning>
+  The `compareWith` attribute must exactly match the name of another field in the class.
+</Warning>
+
+### @MustContainOne
+
+Validates that String contains at least one character from the specified alphabet:
+
+```java
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+@Required
+@MinLength(min = 8)
+@MustContainOne(alphabet = ALPHA_UPPERCASE, message = "At least one uppercase letter required")
+@MustContainOne(alphabet = "@#*-", message = "At least one special character required")
+private String password;
+```
+
+### @MustContainMin
+
+Validates minimum number of characters from the specified alphabet:
+
+```java
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+@Required
+@MinLength(min = 8)
+@MustContainMin(min = 3, alphabet = ALPHA_LOWERCASE, message = "At least 3 lowercase letters")
+@MustContainMin(min = 3, alphabet = NUMBER, message = "At least 3 numbers")
+@MustContainMin(min = 1, alphabet = ALPHA_UPPERCASE, message = "At least 1 uppercase letter")
+private String strongPassword;
+```
+
+### @NotContain
+
+Validates that String does not contain any of the specified characters:
+
+```java
+@Required
+@NotContain(alphabet = "<>")
+private String username;
+
+@NotContain(alphabet = "!@#$%", message = "Special characters not allowed")
+private String displayName;
+```
+
+### @ShouldOnlyContain
+
+Validates that String only contains specified characters:
+
+```java
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+@ShouldOnlyContain(alphabet = NUMBER)
+private String zipCode;
+
+@ShouldOnlyContain(alphabet = ALPHA_NUMERIC, message = "Only letters and numbers")
+private String identifier;
+```
+
+## Numeric Range Validation
+
+### @MinValue and @MaxValue
+
+```java
+@Required
+@Number
+@MinValue(min = 0.0)
+private String price;
+
+@Number
+@MinValue(min = 18.0, message = "Must be at least 18")
+@MaxValue(max = 120.0, message = "Must be at most 120")
+private String age;
+```
+
+### @RangeValue
+
+```java
+@Required
+@Number
+@RangeValue(min = 0.0, max = 100.0)
+private String percentage;
+
+@RangeValue(min = 1.0, max = 10.0, message = "Must be between 1 and 10")
+private String rating;
+```
+
+## Date and Age Validation
+
+### @MinAge
+
+Validates minimum age from date:
+
+```java
+@Required
+@Date(format = "dd/MM/yyyy")
+@MinAge(format = "dd/MM/yyyy", age = 18)
+private String birthDate;
+
+@Date(format = "yyyy-MM-dd")
+@MinAge(format = "yyyy-MM-dd", age = 21, message = "Must be at least 21 years old")
+private String dateOfBirth;
+```
+
+### @ExpirationDate
+
+Validates that date has not expired:
+
+```java
+@Required
+@Date(format = "MM/yyyy")
+@ExpirationDate(format = "MM/yyyy")
+private String cardExpiration;
+
+@Date(format = "yyyy-MM-dd")
+@ExpirationDate(format = "yyyy-MM-dd", message = "This date has expired")
+private String validUntil;
+```
+
+## Repeatable Annotations
+
+Some annotations can be repeated on the same field:
+
+```java
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+@Required
+@MinLength(min = 12)
+@MustContainMin(min = 3, alphabet = ALPHA_LOWERCASE)
+@MustContainMin(min = 3, alphabet = ALPHA_UPPERCASE)
+@MustContainMin(min = 3, alphabet = NUMBER)
+@MustContainMin(min = 3, alphabet = "@~_/")
+@NotContain(alphabet = "<>")
+@NotContain(alphabet = "'\"")
+private String securePassword;
+```
+
+Repeatable annotations:
+- `@MustContainOne`
+- `@MustContainMin`
+- `@NotContain`
+
+## Complete Example: Password Validation
+
+Here's a comprehensive example showing password validation with multiple annotations:
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class PasswordChange {
+
+    @Required(message = "Password is required")
+    @MinLength(min = 8, message = "Password must be at least 8 characters")
+    @MustContainMin(min = 3, alphabet = ALPHA_LOWERCASE, message = "At least 3 lowercase letters required")
+    @MustContainMin(min = 3, alphabet = NUMBER, message = "At least 3 numbers required")
+    @MustContainOne(alphabet = ALPHA_UPPERCASE, message = "At least one uppercase letter required")
+    @MustContainOne(alphabet = "@#*-", message = "At least one special character (@#*-) required")
+    @Compare(compareWith = "passwordConfirm", message = "Passwords do not match")
+    private String password;
+    
+    private String passwordConfirm;
+
+    public PasswordChange(String password, String passwordConfirm) {
+        this.password = password;
+        this.passwordConfirm = passwordConfirm;
+    }
+
+    // Getters and setters...
+}
+```
+
+Validate the password change:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+public class UserService {
+
+    public void changePassword(String newPassword, String confirmPassword) {
+        PasswordChange passwordChange = new PasswordChange(newPassword, confirmPassword);
+        
+        try {
+            Validator.validOrFail(passwordChange);
+            // Password meets all requirements
+            updateUserPassword(newPassword);
+        } catch (InvalidEvaluationException e) {
+            displayError(e.getMessage());
+        }
+    }
+
+}
+```
+
+## Custom Messages vs Default Messages
+
+All annotations support optional custom messages:
+
+```java
+// Using default messages
+@Required
+@Email
+private String email;
+
+// Using custom messages
+@Required(message = "Please enter your email address")
+@Email(message = "The email format is invalid")
+private String email;
+```
+
+Default messages are available in English (`MessagesEn`) and Spanish (`MessagesEs`).
+
+<Info>
+  You can change the default message language using `Validator.setMessages(new MessagesEs())`.
+</Info>
+
+## Annotation Evaluation Order
+
+Annotations are evaluated top-to-bottom. When one fails, evaluation stops:
+
+```java
+@Required              // Evaluated first
+@MinLength(min = 8)    // Evaluated second (if @Required passes)
+@Email                 // Evaluated third (if @MinLength passes)
+private String email;
+```
+
+If `email` is null, only `@Required` error is returned. The other annotations are not evaluated.
+
+<Note>
+  Order your annotations logically: existence checks first, then format validation, then content requirements.
+</Note>
+
+## Complete Registration Example
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class UserRegistration {
+
+    @Required(message = "Email is required")
+    @Email(message = "Invalid email format")
+    private String email;
+
+    @Required(message = "Phone is required")
+    @NumberPattern(patter = "(xxxx) xxx xx xx", message = "Invalid phone format")
+    private String phone;
+
+    @Required(message = "Password is required")
+    @MinLength(min = 12, message = "Password must be at least 12 characters")
+    @MustContainMin(min = 3, alphabet = ALPHA_LOWERCASE, message = "At least 3 lowercase letters")
+    @MustContainMin(min = 3, alphabet = ALPHA_UPPERCASE, message = "At least 3 uppercase letters")
+    @MustContainMin(min = 3, alphabet = NUMBER, message = "At least 3 numbers")
+    @MustContainMin(min = 3, alphabet = "@~_/", message = "At least 3 special characters")
+    @Compare(compareWith = "passwordConfirm", message = "Passwords do not match")
+    private String password;
+
+    private String passwordConfirm;
+
+    @Required(message = "Birth date is required")
+    @Date(format = "dd/MM/yyyy", message = "Invalid date format (dd/MM/yyyy)")
+    @MinAge(format = "dd/MM/yyyy", age = 18, message = "Must be at least 18 years old")
+    private String birthDate;
+
+    // Constructor
+    public UserRegistration(String email, String phone, String password, 
+                           String passwordConfirm, String birthDate) {
+        this.email = email;
+        this.phone = phone;
+        this.password = password;
+        this.passwordConfirm = passwordConfirm;
+        this.birthDate = birthDate;
+    }
+
+    // Getters and setters...
+}
+```
+
+<Info>
+  Annotations provide a clean, declarative way to define validation rules. However, they cannot express custom business logic - for that, use the Builder pattern with custom rules.
+</Info>

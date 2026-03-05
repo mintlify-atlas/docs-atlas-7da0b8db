@@ -1,0 +1,718 @@
+---
+title: Format Rules
+description: Validation rules for emails, dates, times, URLs, IP addresses, and regular expressions
+---
+
+## Overview
+
+Format rules validate that String values match specific format patterns such as email addresses, dates, URLs, IP addresses, and custom regular expressions.
+
+## Email Validation
+
+### email
+
+Validates that the String has a valid email format.
+
+```java
+public void email(String message)
+public void email()
+```
+
+<ParamField path="message" type="String">
+  Custom error message (optional - uses default if not provided)
+</ParamField>
+
+**Example:**
+
+```java
+Validator validator = new Validator();
+validator.email();
+validator.email("Please enter a valid email address");
+
+validator.isValid("user@example.com");     // true
+validator.isValid("user.name@domain.co");  // true
+validator.isValid("invalid.email");        // false
+validator.isValid("@example.com");         // false
+```
+
+**Builder Usage:**
+
+```java
+Validator emailValidator = new Validator.Builder()
+    .required()
+    .email("Invalid email format")
+    .maxLength(255)
+    .build();
+```
+
+**Annotation Usage:**
+
+```java
+public class User {
+    @Email
+    private String email;
+    
+    @Email(message = "Please provide a valid email")
+    private String alternateEmail;
+}
+```
+
+## Date and Time Validation
+
+### date
+
+Validates that the String matches a specified date format.
+
+```java
+public void date(String format, String message)
+public void date(String format)
+```
+
+<ParamField path="format" type="String" required>
+  Date format pattern (e.g., "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy")
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for format)
+</ParamField>
+
+**Example:**
+
+```java
+validator.date("yyyy-MM-dd");
+validator.date("MM/dd/yyyy", "Date must be in format %s");
+
+// For format "yyyy-MM-dd"
+validator.isValid("2024-12-31");  // true
+validator.isValid("12/31/2024");  // false
+validator.isValid("2024-13-01");  // false (invalid month)
+
+// For format "MM/dd/yyyy"
+validator.isValid("12/31/2024");  // true
+validator.isValid("2024-12-31");  // false
+```
+
+**Common Date Formats:**
+
+```java
+// ISO 8601
+validator.date("yyyy-MM-dd");
+
+// US Format
+validator.date("MM/dd/yyyy");
+
+// European Format
+validator.date("dd/MM/yyyy");
+
+// With time
+validator.date("yyyy-MM-dd HH:mm:ss");
+```
+
+**Annotation Usage:**
+
+```java
+public class Event {
+    @Date(format = "yyyy-MM-dd")
+    private String eventDate;
+    
+    @Date(
+        format = "MM/dd/yyyy",
+        message = "Birth date must be in format MM/dd/yyyy"
+    )
+    private String birthDate;
+}
+```
+
+---
+
+### expirationDate
+
+Validates that the entered date has not expired (is in the future or today).
+
+```java
+public void expirationDate(String format, String message)
+public void expirationDate(String format)
+```
+
+<ParamField path="format" type="String" required>
+  Date format pattern describing the date format
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for format)
+</ParamField>
+
+**Warning:** This function uses the current date of the device.
+
+**Note:** It is recommended to use the `date()` rule first to ensure valid date format.
+
+**Example:**
+
+```java
+validator.date("yyyy-MM-dd");
+validator.expirationDate("yyyy-MM-dd");
+validator.expirationDate("MM/dd/yyyy", "Card has expired");
+
+// Assuming today is 2024-06-15
+validator.isValid("2024-06-15");  // true (today)
+validator.isValid("2024-12-31");  // true (future)
+validator.isValid("2024-01-01");  // false (past)
+```
+
+**Credit Card Example:**
+
+```java
+Validator cardExpiryValidator = new Validator.Builder()
+    .required("Expiration date is required")
+    .date("MM/yy", "Invalid date format")
+    .expirationDate("MM/yy", "Card has expired")
+    .build();
+```
+
+**Annotation Usage:**
+
+```java
+public class CreditCard {
+    @Date(format = "MM/yyyy")
+    @ExpirationDate(format = "MM/yyyy", message = "Card has expired")
+    private String expiryDate;
+}
+```
+
+---
+
+### minAge
+
+Validates that the period from the entered date to the current date is greater than or equal to a minimum age.
+
+```java
+public void minAge(String format, int age, String message)
+public void minAge(String format, int age)
+```
+
+<ParamField path="format" type="String" required>
+  Date format pattern for the birth date
+</ParamField>
+
+<ParamField path="age" type="int" required>
+  Minimum age required (in years)
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for age)
+</ParamField>
+
+**Warning:** This function uses the current date of the device.
+
+**Note:** It is recommended to use the `date()` rule first.
+
+**Example:**
+
+```java
+validator.date("yyyy-MM-dd");
+validator.minAge("yyyy-MM-dd", 18);
+validator.minAge("MM/dd/yyyy", 21, "Must be at least %s years old");
+
+// Assuming today is 2024-06-15
+validator.isValid("2006-06-15");  // true (exactly 18)
+validator.isValid("2000-01-01");  // true (24 years old)
+validator.isValid("2010-01-01");  // false (only 14)
+```
+
+**Registration Form Example:**
+
+```java
+Validator birthDateValidator = new Validator.Builder()
+    .required("Birth date is required")
+    .date("yyyy-MM-dd", "Invalid date format")
+    .minAge("yyyy-MM-dd", 18, "Must be at least %s years old to register")
+    .build();
+```
+
+**Annotation Usage:**
+
+```java
+public class UserRegistration {
+    @Date(format = "yyyy-MM-dd")
+    @MinAge(format = "yyyy-MM-dd", age = 18, message = "Must be 18 or older")
+    private String birthDate;
+    
+    @Date(format = "MM/dd/yyyy")
+    @MinAge(format = "MM/dd/yyyy", age = 21)
+    private String driversLicenseDate;
+}
+```
+
+---
+
+### time
+
+Validates that the String is in a valid time format (accepts both 12-hour and 24-hour formats).
+
+```java
+public void time(String message)
+public void time()
+```
+
+**Example:**
+
+```java
+validator.time();
+validator.time("Please enter a valid time");
+
+validator.isValid("14:30");      // true (24-hour)
+validator.isValid("2:30 PM");    // true (12-hour)
+validator.isValid("02:30:00");   // true
+validator.isValid("25:00");      // false
+validator.isValid("invalid");    // false
+```
+
+**Annotation Usage:**
+
+```java
+public class Appointment {
+    @Time
+    private String appointmentTime;
+}
+```
+
+---
+
+### time12
+
+Validates that the String is in 12-hour time format (with AM/PM).
+
+```java
+public void time12(String message)
+public void time12()
+```
+
+**Example:**
+
+```java
+validator.time12();
+validator.time12("Time must be in 12-hour format");
+
+validator.isValid("2:30 PM");    // true
+validator.isValid("12:00 AM");   // true
+validator.isValid("11:59 PM");   // true
+validator.isValid("14:30");      // false (24-hour format)
+validator.isValid("13:00 PM");   // false (invalid)
+```
+
+**Annotation Usage:**
+
+```java
+public class Schedule {
+    @Time12
+    private String startTime;
+    
+    @Time12(message = "End time must be in 12-hour format (e.g., 2:30 PM)")
+    private String endTime;
+}
+```
+
+---
+
+### time24
+
+Validates that the String is in 24-hour time format.
+
+```java
+public void time24(String message)
+public void time24()
+```
+
+**Example:**
+
+```java
+validator.time24();
+validator.time24("Time must be in 24-hour format");
+
+validator.isValid("00:00");      // true
+validator.isValid("14:30");      // true
+validator.isValid("23:59");      // true
+validator.isValid("2:30 PM");    // false (12-hour format)
+validator.isValid("24:00");      // false (invalid)
+```
+
+**Annotation Usage:**
+
+```java
+public class FlightSchedule {
+    @Time24
+    private String departureTime;
+    
+    @Time24(message = "Arrival time must be in 24-hour format (HH:mm)")
+    private String arrivalTime;
+}
+```
+
+## URL and Link Validation
+
+### link
+
+Validates that the String is a valid link/URL format.
+
+```java
+public void link(String message)
+public void link()
+```
+
+**Example:**
+
+```java
+validator.link();
+validator.link("Please enter a valid URL");
+
+validator.isValid("https://example.com");       // true
+validator.isValid("http://example.com");        // true
+validator.isValid("www.example.com");           // true
+validator.isValid("ftp://files.example.com");   // true
+validator.isValid("not a link");                // false
+```
+
+**Annotation Usage:**
+
+```java
+public class SocialProfile {
+    @Link
+    private String website;
+    
+    @Link(message = "Invalid portfolio URL")
+    private String portfolioUrl;
+}
+```
+
+---
+
+### wwwLink
+
+Validates that the String is a link with www format.
+
+```java
+public void wwwLink(String message)
+public void wwwLink()
+```
+
+**Example:**
+
+```java
+validator.wwwLink();
+validator.wwwLink("Link must start with www");
+
+validator.isValid("www.example.com");           // true
+validator.isValid("www.subdomain.example.com"); // true
+validator.isValid("https://example.com");       // false
+validator.isValid("example.com");               // false
+```
+
+**Annotation Usage:**
+
+```java
+@WwwLink
+private String website;
+```
+
+---
+
+### httpLink
+
+Validates that the String is a link with http:// protocol.
+
+```java
+public void httpLink(String message)
+public void httpLink()
+```
+
+**Example:**
+
+```java
+validator.httpLink();
+validator.httpLink("Link must use HTTP protocol");
+
+validator.isValid("http://example.com");   // true
+validator.isValid("http://api.example.com"); // true
+validator.isValid("https://example.com");  // false
+validator.isValid("www.example.com");      // false
+```
+
+**Annotation Usage:**
+
+```java
+@HttpLink
+private String apiEndpoint;
+```
+
+---
+
+### httpsLink
+
+Validates that the String is a link with https:// protocol.
+
+```java
+public void httpsLink(String message)
+public void httpsLink()
+```
+
+**Example:**
+
+```java
+validator.httpsLink();
+validator.httpsLink("Link must use secure HTTPS protocol");
+
+validator.isValid("https://example.com");       // true
+validator.isValid("https://secure.example.com"); // true
+validator.isValid("http://example.com");        // false
+validator.isValid("www.example.com");           // false
+```
+
+**Annotation Usage:**
+
+```java
+public class SecuritySettings {
+    @HttpsLink(message = "Webhook URL must use HTTPS")
+    private String webhookUrl;
+}
+```
+
+## IP Address Validation
+
+### ip
+
+Validates that the String is a valid IP address (IPv4 or IPv6).
+
+```java
+public void ip(String message)
+public void ip()
+```
+
+**Example:**
+
+```java
+validator.ip();
+validator.ip("Please enter a valid IP address");
+
+validator.isValid("192.168.1.1");                    // true (IPv4)
+validator.isValid("2001:0db8:85a3:0000:0000:8a2e:0370:7334"); // true (IPv6)
+validator.isValid("256.1.1.1");                      // false
+validator.isValid("not an ip");                      // false
+```
+
+**Annotation Usage:**
+
+```java
+public class NetworkConfig {
+    @Ip
+    private String serverAddress;
+}
+```
+
+---
+
+### ipv4
+
+Validates that the String is a valid IPv4 address.
+
+```java
+public void ipv4(String message)
+public void ipv4()
+```
+
+**Example:**
+
+```java
+validator.ipv4();
+validator.ipv4("Please enter a valid IPv4 address");
+
+validator.isValid("192.168.1.1");     // true
+validator.isValid("10.0.0.1");        // true
+validator.isValid("255.255.255.255"); // true
+validator.isValid("256.1.1.1");       // false
+validator.isValid("2001:0db8::1");    // false (IPv6)
+```
+
+**Annotation Usage:**
+
+```java
+public class ServerConfig {
+    @Ipv4
+    private String ipAddress;
+    
+    @Ipv4(message = "Gateway must be a valid IPv4 address")
+    private String gateway;
+}
+```
+
+---
+
+### ipv6
+
+Validates that the String is a valid IPv6 address.
+
+```java
+public void ipv6(String message)
+public void ipv6()
+```
+
+**Example:**
+
+```java
+validator.ipv6();
+validator.ipv6("Please enter a valid IPv6 address");
+
+validator.isValid("2001:0db8:85a3:0000:0000:8a2e:0370:7334"); // true
+validator.isValid("2001:db8::1");                            // true
+validator.isValid("::1");                                    // true (localhost)
+validator.isValid("192.168.1.1");                            // false (IPv4)
+```
+
+**Annotation Usage:**
+
+```java
+public class NetworkSettings {
+    @Ipv6
+    private String ipv6Address;
+    
+    @Ipv6(message = "DNS server must be a valid IPv6 address")
+    private String dnsServer;
+}
+```
+
+## Regular Expression
+
+### regExp
+
+Validates that the String matches a custom regular expression pattern.
+
+```java
+public void regExp(String regExp, String message)
+public void regExp(String regExp)
+```
+
+<ParamField path="regExp" type="String" required>
+  Regular expression pattern to match
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for the regex pattern)
+</ParamField>
+
+**Example:**
+
+```java
+// Username: letters, numbers, underscore, 3-20 chars
+validator.regExp("^[a-zA-Z0-9_]{3,20}$");
+validator.regExp("^[a-zA-Z0-9_]{3,20}$", "Invalid username format");
+
+// Hex color code
+validator.regExp("^#[0-9A-Fa-f]{6}$", "Must be a valid hex color");
+
+// UUID
+validator.regExp(
+    "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    "Must be a valid UUID"
+);
+```
+
+**Common Patterns:**
+
+```java
+// Alphanumeric with underscores
+validator.regExp("^[a-zA-Z0-9_]+$");
+
+// Lowercase letters only
+validator.regExp("^[a-z]+$");
+
+// Letters and spaces
+validator.regExp("^[a-zA-Z ]+$");
+
+// US ZIP code
+validator.regExp("^\\d{5}(-\\d{4})?$");
+
+// Credit card (basic)
+validator.regExp("^\\d{4}-\\d{4}-\\d{4}-\\d{4}$");
+```
+
+**Annotation Usage:**
+
+```java
+public class CustomValidation {
+    @RegExp(regExp = "^[A-Z]{2}\\d{6}$")
+    private String licenseNumber;
+    
+    @RegExp(
+        regExp = "^#[0-9A-Fa-f]{6}$",
+        message = "Color must be a valid hex code (e.g., #FF5733)"
+    )
+    private String favoriteColor;
+}
+```
+
+## Complete Examples
+
+### Registration Form
+
+```java
+public class RegistrationForm {
+    @Required
+    @Email
+    private String email;
+    
+    @Required
+    @Date(format = "yyyy-MM-dd")
+    @MinAge(format = "yyyy-MM-dd", age = 18)
+    private String birthDate;
+    
+    @Required
+    @HttpsLink(message = "Profile URL must use HTTPS")
+    private String profileUrl;
+}
+
+try {
+    Validator.validOrFail(registrationForm);
+} catch (InvalidEvaluationException e) {
+    System.err.println(e.getKey() + ": " + e.getMessage());
+}
+```
+
+### Event Scheduler
+
+```java
+Validator eventValidator = new Validator.Builder()
+    .required("Event date is required")
+    .date("yyyy-MM-dd", "Date must be in YYYY-MM-DD format")
+    .expirationDate("yyyy-MM-dd", "Event date cannot be in the past")
+    .build();
+
+Validator timeValidator = new Validator.Builder()
+    .required()
+    .time24("Time must be in 24-hour format (HH:mm)")
+    .build();
+```
+
+### Server Configuration
+
+```java
+public class ServerConfig {
+    @Required
+    @Ipv4(message = "Invalid server IP address")
+    private String serverIp;
+    
+    @Ipv4
+    private String gateway;
+    
+    @Ipv4
+    private String dnsServer;
+    
+    @HttpsLink
+    private String apiEndpoint;
+}
+```
+
+## See Also
+
+- [Validator](/api/validator) - Main validation class
+- [String Rules](/api/rules/string-rules) - String validation rules
+- [Numeric Rules](/api/rules/numeric-rules) - Numeric validation rules
+- [Comparison Rules](/api/rules/comparison-rules) - Field comparison

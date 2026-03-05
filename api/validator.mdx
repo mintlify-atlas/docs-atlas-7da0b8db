@@ -1,0 +1,450 @@
+---
+title: Validator
+description: Core validation class for chaining and executing validation rules
+---
+
+## Overview
+
+The `Validator` class is the central component of the library that facilitates validation of String values by chaining a series of rules. It provides both direct instantiation and a Builder pattern for creating complex validation chains.
+
+## Class Declaration
+
+```java
+public class Validator implements Cloneable
+```
+
+## Constructors
+
+### Default Constructor
+
+```java
+public Validator()
+```
+
+Creates a new empty Validator instance.
+
+## Static Methods
+
+### setMessages
+
+```java
+public static void setMessages(Messages messages)
+```
+
+Sets the default error messages for all predefined validation rules.
+
+<ParamField path="messages" type="Messages">
+  Custom messages implementation. If null, the method returns without making changes.
+</ParamField>
+
+**Example:**
+
+```java
+Validator.setMessages(new MessagesEs()); // Set Spanish messages
+```
+
+### getMessages
+
+```java
+public static Messages getMessages()
+```
+
+Returns the current Messages instance being used for default error messages.
+
+**Returns:** The active `Messages` implementation
+
+### validOrFail
+
+```java
+public static void validOrFail(Object obj) throws InvalidEvaluationException
+```
+
+Validates an object's String fields using annotation-based validation rules.
+
+<ParamField path="obj" type="Object" required>
+  The object to validate. All String fields with validation annotations will be checked.
+</ParamField>
+
+**Throws:** `InvalidEvaluationException` if any field fails validation
+
+**Supported Annotations:**
+- `@Required`
+- `@Length`
+- `@MinLength`
+- `@MaxLength`
+- `@RangeLength`
+- `@Email`
+- `@Number`
+- `@RegExp`
+- `@Compare`
+- `@Date`
+- `@ExpirationDate`
+- `@MinAge`
+- `@Name`
+- And all other validation annotations
+
+**Example:**
+
+```java
+public class User {
+    @Required
+    @Email
+    private String email;
+    
+    @MinLength(min = 8)
+    private String password;
+    
+    @Compare(compareWith = "password")
+    private String confirmPassword;
+}
+
+User user = new User();
+Validator.validOrFail(user); // Throws InvalidEvaluationException if invalid
+```
+
+## Instance Methods
+
+### isValid
+
+```java
+public boolean isValid(String evaluate)
+```
+
+Validates that a String meets all configured rules.
+
+<ParamField path="evaluate" type="String" required>
+  The String to validate against all rules
+</ParamField>
+
+**Returns:** `true` if validation passes, `false` otherwise
+
+**Note:** If validation fails and an `onInvalidEvaluation` handler is set, it will be invoked with the error message.
+
+**Example:**
+
+```java
+Validator validator = new Validator();
+validator.required();
+validator.email();
+
+if (validator.isValid("user@example.com")) {
+    System.out.println("Valid email");
+}
+```
+
+### validOrFail (Instance)
+
+```java
+public void validOrFail(String key, String evaluate) throws InvalidEvaluationException
+```
+
+Validates a String against all rules, throwing an exception if validation fails.
+
+<ParamField path="key" type="String" required>
+  Identifier for the String being validated (used in exception)
+</ParamField>
+
+<ParamField path="evaluate" type="String" required>
+  The String to validate
+</ParamField>
+
+**Throws:** `InvalidEvaluationException` with the field key, value, and error message
+
+**Example:**
+
+```java
+try {
+    validator.validOrFail("email", userInput);
+} catch (InvalidEvaluationException e) {
+    System.out.println("Field: " + e.getKey());
+    System.out.println("Error: " + e.getMessage());
+}
+```
+
+### isMatch
+
+```java
+public boolean isMatch(String evaluate, String compare)
+```
+
+Validates that two Strings match AND that they meet all configured rules.
+
+<ParamField path="evaluate" type="String" required>
+  The primary String to validate
+</ParamField>
+
+<ParamField path="compare" type="String" required>
+  The String to compare against
+</ParamField>
+
+**Returns:** `true` if both strings match and pass all rules, `false` otherwise
+
+**Note:** If the comparison fails or validation fails, the `onInvalidEvaluation` handler will be invoked.
+
+**Example:**
+
+```java
+Validator passwordValidator = new Validator();
+passwordValidator.minLength(8);
+passwordValidator.mustContainOne("!@#$%");
+passwordValidator.setNotMatchMessage("Passwords do not match");
+
+if (passwordValidator.isMatch(password, confirmPassword)) {
+    System.out.println("Passwords match and are valid");
+}
+```
+
+### compareOrFail
+
+```java
+public void compareOrFail(String key, String evaluate, String compare) throws InvalidEvaluationException
+```
+
+Validates that two Strings match and meet all rules, throwing an exception on failure.
+
+<ParamField path="key" type="String" required>
+  Identifier for the field being validated
+</ParamField>
+
+<ParamField path="evaluate" type="String" required>
+  The primary String to validate
+</ParamField>
+
+<ParamField path="compare" type="String" required>
+  The String to compare against
+</ParamField>
+
+**Throws:** `InvalidEvaluationException` if strings don't match or validation fails
+
+### setNotMatchMessage
+
+```java
+public void setNotMatchMessage(String message)
+```
+
+Sets the custom error message for comparison failures in `isMatch()` and `compareOrFail()`.
+
+<ParamField path="message" type="String" required>
+  The error message to display when Strings don't match
+</ParamField>
+
+### rule
+
+```java
+public void rule(String message, Validate validate)
+```
+
+Adds a custom validation rule to the validator.
+
+<ParamField path="message" type="String" required>
+  Error message to display if validation fails
+</ParamField>
+
+<ParamField path="validate" type="Validate" required>
+  Functional interface that takes a String and returns true if valid
+</ParamField>
+
+**Example:**
+
+```java
+validator.rule("Must not be 'admin'", value -> !value.equals("admin"));
+validator.rule("Must start with uppercase", value -> 
+    Character.isUpperCase(value.charAt(0))
+);
+```
+
+### onInvalidEvaluation
+
+```java
+public void onInvalidEvaluation(OnInvalidEvaluation onInvalidEvaluation)
+```
+
+Sets an event handler that is invoked when validation fails.
+
+<ParamField path="onInvalidEvaluation" type="OnInvalidEvaluation" required>
+  Functional interface that receives the error message when validation fails
+</ParamField>
+
+**Example:**
+
+```java
+validator.onInvalidEvaluation(errorMessage -> {
+    System.err.println("Validation error: " + errorMessage);
+    // Show in UI, log, etc.
+});
+```
+
+### copy
+
+```java
+public Validator copy()
+```
+
+Creates a shallow copy of the Validator instance.
+
+**Returns:** A new `Validator` instance with the same rules and configuration, or `null` if cloning fails
+
+**Example:**
+
+```java
+Validator baseValidator = new Validator();
+baseValidator.required();
+baseValidator.minLength(5);
+
+Validator emailValidator = baseValidator.copy();
+emailValidator.email();
+
+Validator phoneValidator = baseValidator.copy();
+phoneValidator.numberPattern("+xx (xxx) xxx-xxxx");
+```
+
+## Predefined Rules
+
+The Validator class provides numerous predefined validation rules. Each rule has two overloads:
+1. One accepting a custom error message
+2. One using the default message from the Messages configuration
+
+See the individual rule documentation pages:
+- [String Rules](/api/rules/string-rules) - Length, format, and content validation
+- [Numeric Rules](/api/rules/numeric-rules) - Number format and value range validation
+- [Format Rules](/api/rules/format-rules) - Email, date, time, URL, and IP validation
+- [Comparison Rules](/api/rules/comparison-rules) - Field comparison validation
+
+## Builder Pattern
+
+The `Validator.Builder` class provides a fluent API for constructing validators.
+
+### Creating a Builder
+
+```java
+Validator validator = new Validator.Builder()
+    .required()
+    .email()
+    .maxLength(100)
+    .onInvalidEvaluation(error -> System.err.println(error))
+    .build();
+```
+
+### Builder Methods
+
+All validation rule methods are available on the Builder and return `Builder` for chaining.
+
+#### setNotMatchMessage
+
+```java
+public Builder setNotMatchMessage(String message)
+```
+
+Sets the error message for comparison failures.
+
+**Returns:** The Builder instance for chaining
+
+#### onInvalidEvaluation
+
+```java
+public Builder onInvalidEvaluation(OnInvalidEvaluation onInvalidEvaluation)
+```
+
+Sets the validation failure handler.
+
+**Returns:** The Builder instance for chaining
+
+#### build
+
+```java
+public Validator build()
+```
+
+Constructs and returns the configured Validator instance.
+
+**Returns:** A new `Validator` with all configured rules
+
+### Complete Builder Example
+
+```java
+Validator passwordValidator = new Validator.Builder()
+    .required("Password is required")
+    .minLength(8, "Password must be at least 8 characters")
+    .mustContainOne("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "Must contain uppercase letter")
+    .mustContainOne("abcdefghijklmnopqrstuvwxyz", "Must contain lowercase letter")
+    .mustContainOne("0123456789", "Must contain a number")
+    .mustContainOne("!@#$%^&*", "Must contain a special character")
+    .onInvalidEvaluation(error -> displayError(error))
+    .build();
+
+try {
+    passwordValidator.validOrFail("password", userPassword);
+} catch (InvalidEvaluationException e) {
+    // Handle validation failure
+}
+```
+
+## Usage Patterns
+
+### Pattern 1: Direct Instantiation
+
+```java
+Validator validator = new Validator();
+validator.required();
+validator.email();
+validator.maxLength(255);
+
+if (validator.isValid(email)) {
+    // Process valid email
+}
+```
+
+### Pattern 2: Builder Pattern
+
+```java
+Validator validator = new Validator.Builder()
+    .required()
+    .email()
+    .maxLength(255)
+    .build();
+```
+
+### Pattern 3: Annotation-Based
+
+```java
+public class SignupForm {
+    @Required
+    @Email
+    @MaxLength(max = 255)
+    private String email;
+    
+    @Required
+    @MinLength(min = 8)
+    @MustContainOne(alphabet = "0123456789")
+    private String password;
+}
+
+SignupForm form = new SignupForm();
+Validator.validOrFail(form);
+```
+
+### Pattern 4: Reusable Validators
+
+```java
+// Create base validator
+Validator baseStringValidator = new Validator.Builder()
+    .required()
+    .maxLength(500)
+    .build();
+
+// Copy and extend for specific use cases
+Validator usernameValidator = baseStringValidator.copy();
+usernameValidator.minLength(3);
+usernameValidator.onlyAlphanumeric();
+
+Validator nameValidator = baseStringValidator.copy();
+nameValidator.name();
+```
+
+## See Also
+
+- [Rule](/api/rule) - Understanding the Rule class
+- [String Rules](/api/rules/string-rules) - String validation rules
+- [Numeric Rules](/api/rules/numeric-rules) - Numeric validation rules
+- [Format Rules](/api/rules/format-rules) - Format validation rules
+- [Comparison Rules](/api/rules/comparison-rules) - Comparison validation rules

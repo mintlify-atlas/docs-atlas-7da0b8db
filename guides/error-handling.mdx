@@ -1,0 +1,536 @@
+---
+title: Error Handling
+description: Master event-based and exception-based error handling strategies
+---
+
+## Overview
+
+The Validator library provides two approaches to handle validation errors:
+
+1. **Event-based** - Using the `onInvalidEvaluation` callback
+2. **Exception-based** - Using `validOrFail()` and `compareOrFail()` methods
+
+Choose the approach that best fits your application architecture and error handling strategy.
+
+## Event-Based Error Handling
+
+Event-based handling uses callbacks to respond to validation failures without throwing exceptions.
+
+### Basic Event Handling
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+
+Validator validator = new Validator.Builder()
+    .required()
+    .minLength(6)
+    .email()
+    .build();
+
+// Register error handler
+validator.onInvalidEvaluation(message -> {
+    System.err.println("Validation error: " + message);
+});
+
+// Validate - returns boolean
+boolean isValid = validator.isValid("test");
+if (isValid) {
+    // Proceed with valid input
+}
+```
+
+### How Events Work
+
+<Steps>
+  <Step title="Register the event handler">
+    Call `onInvalidEvaluation()` with a callback function:
+
+    ```java
+    validator.onInvalidEvaluation(message -> {
+        // Handle the error message
+    });
+    ```
+  </Step>
+
+  <Step title="Call validation method">
+    Use `isValid()` or `isMatch()` to validate:
+
+    ```java
+    boolean valid = validator.isValid(userInput);
+    ```
+  </Step>
+
+  <Step title="Event triggers on failure">
+    If validation fails, your callback is invoked with the error message:
+
+    ```java
+    // If minLength fails:
+    // message = "6 or more characters are required"
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  Only the **first** failing rule triggers the event. Rules are evaluated in the order they were added, and validation stops at the first failure.
+</Note>
+
+### Multiple Field Validation with Events
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+
+public class LoginForm {
+
+    private final Validator emailValidator = new Validator.Builder()
+        .required()
+        .email()
+        .build();
+
+    private final Validator passwordValidator = new Validator.Builder()
+        .required()
+        .minLength(8)
+        .build();
+
+    private String emailError = null;
+    private String passwordError = null;
+
+    public LoginForm() {
+        emailValidator.onInvalidEvaluation(message -> {
+            emailError = message;
+            displayError("email", message);
+        });
+
+        passwordValidator.onInvalidEvaluation(message -> {
+            passwordError = message;
+            displayError("password", message);
+        });
+    }
+
+    public boolean submit(String email, String password) {
+        // Clear previous errors
+        emailError = null;
+        passwordError = null;
+
+        boolean emailValid = emailValidator.isValid(email);
+        boolean passwordValid = passwordValidator.isValid(password);
+
+        return emailValid && passwordValid;
+    }
+
+    private void displayError(String field, String message) {
+        System.err.println(field + ": " + message);
+    }
+}
+```
+
+### Password Confirmation with Events
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+
+Validator passwordValidator = new Validator.Builder()
+    .required()
+    .minLength(8)
+    .setNotMatchMessage("Passwords do not match")
+    .build();
+
+passwordValidator.onInvalidEvaluation(message -> {
+    System.err.println("Password error: " + message);
+});
+
+// Validates password AND checks if both match
+boolean valid = passwordValidator.isMatch(password, confirmPassword);
+```
+
+<Tip>
+  Use `.setNotMatchMessage()` to customize the error message when passwords don't match.
+</Tip>
+
+## Exception-Based Error Handling
+
+Exception-based handling throws `InvalidEvaluationException` on validation failure, providing structured error information.
+
+### Basic Exception Handling
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+Validator validator = new Validator.Builder()
+    .required()
+    .minLength(6)
+    .email()
+    .build();
+
+try {
+    validator.validOrFail("email", userInput);
+    // Validation passed - continue
+} catch (InvalidEvaluationException e) {
+    System.err.println("Field: " + e.getKey());
+    System.err.println("Value: " + e.getValue());
+    System.err.println("Error: " + e.getMessage());
+}
+```
+
+### InvalidEvaluationException Details
+
+The exception provides three key pieces of information:
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getKey()` | String | Field identifier passed to `validOrFail()` |
+| `getValue()` | String | The actual value that failed validation |
+| `getMessage()` | String | The error message from the failing rule |
+
+```java
+try {
+    validator.validOrFail("username", "ab");
+} catch (InvalidEvaluationException e) {
+    e.getKey();      // "username"
+    e.getValue();    // "ab"
+    e.getMessage();  // "6 or more characters are required"
+}
+```
+
+### Multiple Field Validation with Exceptions
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+public class RegistrationForm {
+
+    private final Validator emailValidator = new Validator.Builder()
+        .required()
+        .email()
+        .build();
+
+    private final Validator usernameValidator = new Validator.Builder()
+        .required()
+        .minLength(3)
+        .maxLength(20)
+        .onlyAlphanumeric()
+        .build();
+
+    private final Validator passwordValidator = new Validator.Builder()
+        .required()
+        .minLength(8)
+        .build();
+
+    public void submit(String email, String username, String password, String confirmPassword) {
+        try {
+            emailValidator.validOrFail("email", email);
+            usernameValidator.validOrFail("username", username);
+            passwordValidator.compareOrFail("password", password, confirmPassword);
+            
+            // All validations passed
+            createAccount(email, username, password);
+            
+        } catch (InvalidEvaluationException e) {
+            switch (e.getKey()) {
+                case "email":
+                    displayError("email", e.getMessage());
+                    break;
+                case "username":
+                    displayError("username", e.getMessage());
+                    break;
+                case "password":
+                    displayError("password", e.getMessage());
+                    break;
+            }
+        }
+    }
+
+    private void displayError(String field, String message) {
+        System.err.println(field + ": " + message);
+    }
+}
+```
+
+<Warning>
+  Exception-based validation stops at the **first** failure. If you need to collect all validation errors, you must call each validator separately and handle exceptions individually.
+</Warning>
+
+### Password Confirmation with Exceptions
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+Validator passwordValidator = new Validator.Builder()
+    .required()
+    .minLength(8)
+    .build();
+
+try {
+    // Validates password AND checks if both match
+    passwordValidator.compareOrFail("password", password, confirmPassword);
+    updatePassword(password);
+} catch (InvalidEvaluationException e) {
+    System.err.println("Password error: " + e.getMessage());
+}
+```
+
+## Annotation-Based Validation with Exceptions
+
+When using annotations, always use the exception-based approach:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.annotations.*;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+public class User {
+    @Required
+    @Email
+    private String email;
+
+    @Required
+    @MinLength(min = 3)
+    private String username;
+
+    @Required
+    @MinLength(min = 8)
+    @Compare(compareWith = "passwordConfirm")
+    private String password;
+    
+    private String passwordConfirm;
+
+    public void validate() {
+        try {
+            Validator.validOrFail(this);
+            // All validations passed
+        } catch (InvalidEvaluationException e) {
+            System.err.println(e.getKey() + ": " + e.getMessage());
+        }
+    }
+}
+```
+
+<Note>
+  When using `Validator.validOrFail(Object)`, the `key` in the exception corresponds to the field name in your class.
+</Note>
+
+## Collecting All Validation Errors
+
+By default, validation stops at the first error. To collect all errors, validate each field individually:
+
+<CodeGroup>
+```java Event-Based
+import io.github.ApamateSoft.validator.Validator;
+import java.util.ArrayList;
+import java.util.List;
+
+public class FormValidator {
+    
+    private final List<String> errors = new ArrayList<>();
+    
+    public boolean validateForm(String email, String username, String password) {
+        errors.clear();
+        
+        Validator emailValidator = new Validator.Builder()
+            .required()
+            .email()
+            .build();
+        emailValidator.onInvalidEvaluation(msg -> 
+            errors.add("Email: " + msg));
+        
+        Validator usernameValidator = new Validator.Builder()
+            .required()
+            .minLength(3)
+            .build();
+        usernameValidator.onInvalidEvaluation(msg -> 
+            errors.add("Username: " + msg));
+        
+        Validator passwordValidator = new Validator.Builder()
+            .required()
+            .minLength(8)
+            .build();
+        passwordValidator.onInvalidEvaluation(msg -> 
+            errors.add("Password: " + msg));
+        
+        // Validate all fields
+        emailValidator.isValid(email);
+        usernameValidator.isValid(username);
+        passwordValidator.isValid(password);
+        
+        if (!errors.isEmpty()) {
+            errors.forEach(System.err::println);
+            return false;
+        }
+        
+        return true;
+    }
+}
+```
+
+```java Exception-Based
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+import java.util.HashMap;
+import java.util.Map;
+
+public class FormValidator {
+    
+    public Map<String, String> validateForm(String email, String username, String password) {
+        Map<String, String> errors = new HashMap<>();
+        
+        Validator emailValidator = new Validator.Builder()
+            .required()
+            .email()
+            .build();
+        
+        Validator usernameValidator = new Validator.Builder()
+            .required()
+            .minLength(3)
+            .build();
+        
+        Validator passwordValidator = new Validator.Builder()
+            .required()
+            .minLength(8)
+            .build();
+        
+        // Validate all fields and collect errors
+        try {
+            emailValidator.validOrFail("email", email);
+        } catch (InvalidEvaluationException e) {
+            errors.put(e.getKey(), e.getMessage());
+        }
+        
+        try {
+            usernameValidator.validOrFail("username", username);
+        } catch (InvalidEvaluationException e) {
+            errors.put(e.getKey(), e.getMessage());
+        }
+        
+        try {
+            passwordValidator.validOrFail("password", password);
+        } catch (InvalidEvaluationException e) {
+            errors.put(e.getKey(), e.getMessage());
+        }
+        
+        return errors;
+    }
+}
+```
+</CodeGroup>
+
+## Checking Exception Type
+
+When catching multiple exception types, verify the exception is `InvalidEvaluationException`:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+try {
+    validator.validOrFail("field", value);
+    // Other operations that might throw exceptions
+} catch (Exception e) {
+    if (e instanceof InvalidEvaluationException) {
+        InvalidEvaluationException validationError = (InvalidEvaluationException) e;
+        System.err.println("Validation failed: " + validationError.getMessage());
+    } else {
+        // Handle other exceptions
+        throw e;
+    }
+}
+```
+
+## Choosing the Right Approach
+
+<CardGroup cols={2}>
+  <Card title="Use Events When" icon="radio">
+    - Building UI forms with inline validation
+    - You prefer reactive, callback-based code
+    - You want to avoid try-catch blocks
+    - Working with event-driven architectures
+  </Card>
+  
+  <Card title="Use Exceptions When" icon="triangle-exclamation">
+    - You need structured error information (key, value, message)
+    - Building APIs or services
+    - You prefer traditional exception handling
+    - Using annotation-based validation
+  </Card>
+</CardGroup>
+
+## Comparison Table
+
+| Feature | Event-Based | Exception-Based |
+|---------|-------------|----------------|
+| **Validation method** | `isValid()`, `isMatch()` | `validOrFail()`, `compareOrFail()` |
+| **Return value** | `boolean` | `void` (throws on failure) |
+| **Error info** | Message only | Key, value, and message |
+| **Setup required** | Yes (`onInvalidEvaluation`) | No |
+| **Annotation support** | No | Yes |
+| **Code style** | Callback/reactive | Traditional try-catch |
+| **Stops on first error** | Yes | Yes |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Don't log sensitive data">
+    The `InvalidEvaluationException.getValue()` method returns the actual input value. Never log this for passwords or other sensitive fields:
+
+    ```java
+    catch (InvalidEvaluationException e) {
+        // DON'T: log(e.getValue());
+        // DO: log(e.getKey() + ": " + e.getMessage());
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Clear previous errors">
+    When re-validating, clear previous error states to avoid showing stale errors:
+
+    ```java
+    public void submit() {
+        emailError = null;  // Clear previous error
+        if (!emailValidator.isValid(email)) {
+            return;
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Use meaningful keys">
+    Choose descriptive keys that match your field names:
+
+    ```java
+    // Good
+    validator.validOrFail("emailAddress", email);
+    validator.validOrFail("currentPassword", password);
+
+    // Avoid
+    validator.validOrFail("field1", email);
+    validator.validOrFail("input", password);
+    ```
+  </Accordion>
+
+  <Accordion title="Register events before validation">
+    Always set up `onInvalidEvaluation` before calling validation methods:
+
+    ```java
+    // Good
+    validator.onInvalidEvaluation(msg -> handleError(msg));
+    validator.isValid(input);
+
+    // Bad - event not triggered
+    validator.isValid(input);
+    validator.onInvalidEvaluation(msg -> handleError(msg));
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Form Validation" icon="list-check" href="/guides/form-validation">
+    Apply error handling to complete form validation
+  </Card>
+  
+  <Card title="Localization" icon="globe" href="/guides/localization">
+    Customize error messages and support multiple languages
+  </Card>
+</CardGroup>

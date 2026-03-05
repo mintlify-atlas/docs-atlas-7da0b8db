@@ -1,0 +1,400 @@
+---
+title: String Annotations
+description: Annotations for validating string length, content, and character composition
+---
+
+## Overview
+
+String annotations in Validator help you validate text fields by checking their length, character composition, and content requirements. These annotations are essential for validating user input like usernames, names, passwords, and other text-based fields.
+
+## Length Validation
+
+### @Required
+
+Validates that the String is different from null and empty.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Required"
+
+**Example:**
+```java
+@Required
+private String username;
+
+// With custom message
+@Required(message = "Username is required")
+private String username;
+```
+
+---
+
+### @MinLength
+
+Validates that the length of the String is not less than the specified minimum.
+
+**Attributes:**
+- `min` (required): Minimum character length
+- `message` (optional): Error message
+
+**Default Message:** "%d or more characters are required"
+
+**Example:**
+```java
+@MinLength(min = 3)
+private String username;
+
+// With custom message
+@MinLength(min = 8, message = "Password must be at least 8 characters")
+private String password;
+```
+
+---
+
+### @MaxLength
+
+Validates that the length of the String is not greater than the specified maximum.
+
+**Attributes:**
+- `max` (required): Maximum character length
+- `message` (optional): Error message
+
+**Default Message:** "%d or less characters required"
+
+**Example:**
+```java
+@MaxLength(max = 50)
+private String title;
+
+// With custom message
+@MaxLength(max = 100, message = "Description cannot exceed 100 characters")
+private String description;
+```
+
+---
+
+### @Length
+
+Validates that the String has an exact length of characters.
+
+**Attributes:**
+- `length` (required): Exact character length
+- `message` (optional): Error message
+
+**Default Message:** "It requires %d characters"
+
+**Example:**
+```java
+@Length(length = 5)
+private String zipCode;
+
+// With custom message
+@Length(length = 10, message = "Phone number must be exactly 10 digits")
+private String phone;
+```
+
+---
+
+### @RangeLength
+
+Validates that the length of the String is within the established range.
+
+**Attributes:**
+- `min` (required): Minimum character length
+- `max` (required): Maximum character length
+- `message` (optional): Error message
+
+**Default Message:** "The text must contain between %d to %d characters"
+
+**Example:**
+```java
+@RangeLength(min = 6, max = 20)
+private String username;
+
+// With custom message
+@RangeLength(min = 8, max = 50, message = "Password must be between 8 and 50 characters")
+private String password;
+```
+
+## Character Composition
+
+### @OnlyLetters
+
+Validates that the String contains only letters.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Only letters"
+
+**Example:**
+```java
+@OnlyLetters
+private String firstName;
+
+// With custom message
+@OnlyLetters(message = "Name must contain only letters")
+private String lastName;
+```
+
+<Note>
+  This annotation only recognizes letters of the English alphabet. For other alphabets, use `@ShouldOnlyContain` with a custom alphabet.
+</Note>
+
+---
+
+### @OnlyNumbers
+
+Validates that the String contains only numeric characters.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Only numbers"
+
+**Example:**
+```java
+@OnlyNumbers
+private String zipCode;
+
+// With custom message
+@OnlyNumbers(message = "ZIP code must contain only digits")
+private String postalCode;
+```
+
+---
+
+### @OnlyAlphanumeric
+
+Validates that the String contains only alphanumeric characters (letters and numbers).
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Just alphanumeric characters"
+
+**Example:**
+```java
+@OnlyAlphanumeric
+private String username;
+
+// With custom message
+@OnlyAlphanumeric(message = "Username can only contain letters and numbers")
+private String userId;
+```
+
+<Note>
+  This annotation only recognizes English alphabet letters. For other alphabets, use `@ShouldOnlyContain` with a custom alphabet.
+</Note>
+
+## Content Requirements
+
+### @ShouldOnlyContain
+
+Validates that the String only contains characters included in the specified alphabet.
+
+**Attributes:**
+- `alphabet` (required): String with allowed characters
+- `message` (optional): Error message
+
+**Default Message:** "They are just admitted the following characters %s"
+
+**Example:**
+```java
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+@ShouldOnlyContain(alphabet = ALPHABET_ES)
+private String spanishName;
+
+// With custom alphabet
+@ShouldOnlyContain(alphabet = "ABCDEF0123456789")
+private String hexCode;
+
+// With custom message
+@ShouldOnlyContain(alphabet = "01", message = "Binary string can only contain 0 and 1")
+private String binaryValue;
+```
+
+---
+
+### @MustContainOne
+
+Validates that the String contains at least one character from the specified alphabet. This annotation is repeatable, allowing you to require multiple different character types.
+
+**Attributes:**
+- `alphabet` (required): String with desired characters
+- `message` (optional): Error message
+
+**Default Message:** "At least one of the following characters is required: %s"
+
+**Example:**
+```java
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+@MustContainOne(alphabet = ALPHA_UPPERCASE)
+private String password;
+
+// Multiple requirements (repeatable)
+@MustContainOne(alphabet = ALPHA_UPPERCASE, message = "At least one uppercase letter required")
+@MustContainOne(alphabet = ALPHA_LOWERCASE, message = "At least one lowercase letter required")
+@MustContainOne(alphabet = NUMBER, message = "At least one number required")
+@MustContainOne(alphabet = "@#$%^&*", message = "At least one special character required")
+private String strongPassword;
+```
+
+---
+
+### @MustContainMin
+
+Validates that the String contains at least a minimum number of characters from the specified alphabet. This annotation is repeatable.
+
+**Attributes:**
+- `min` (required): Minimum count of characters
+- `alphabet` (required): String with desired characters
+- `message` (optional): Error message
+
+**Default Message:** "At least %d of the following characters are required: %s"
+
+**Example:**
+```java
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+@MustContainMin(min = 3, alphabet = NUMBER)
+private String password;
+
+// Multiple requirements (repeatable)
+@Required(message = "Required")
+@MinLength(min = 12, message = "At least 12 characters required")
+@MustContainMin(min = 3, alphabet = ALPHA_LOWERCASE, message = "At least 3 lowercase letters required")
+@MustContainMin(min = 3, alphabet = ALPHA_UPPERCASE, message = "At least 3 uppercase letters required")
+@MustContainMin(min = 3, alphabet = NUMBER, message = "At least 3 numbers required")
+@MustContainMin(min = 3, alphabet = "@~_/", message = "At least 3 special characters required")
+private String strongPassword;
+```
+
+---
+
+### @NotContain
+
+Validates that the String does not contain any characters from the specified alphabet. This annotation is repeatable.
+
+**Attributes:**
+- `alphabet` (required): String with invalid characters
+- `message` (optional): Error message
+
+**Default Message:** "The following characters aren't admitted %s"
+
+**Example:**
+```java
+@NotContain(alphabet = "<>")
+private String userInput;
+
+// Multiple exclusions (repeatable)
+@NotContain(alphabet = "<>", message = "HTML tags are not allowed")
+@NotContain(alphabet = "'\"", message = "Quotes are not allowed")
+private String safeInput;
+```
+
+---
+
+### @Name
+
+Validates that the String is a proper name format.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "Invalid personal name"
+
+**Example:**
+```java
+@Name
+private String fullName;
+
+// With custom message
+@Name(message = "Please enter a valid name")
+private String personName;
+```
+
+<Note>
+  **Important Notes:**
+  - Capitalization is ignored
+  - Only validates proper names in English
+  - For names in other languages, use `@RegExp` with a custom pattern
+</Note>
+
+**Valid examples:**
+- "Jesus"
+- "Maria"
+- "JOSE"
+- "Jesus Maria"
+- "Maria Jose"
+- "Jose Jesus"
+- "Maria de Jose"
+
+## Complete Example
+
+Here's a comprehensive example combining multiple string annotations:
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class UserProfile {
+    @Required(message = "Username is required")
+    @RangeLength(min = 3, max = 20, message = "Username must be 3-20 characters")
+    @OnlyAlphanumeric(message = "Username can only contain letters and numbers")
+    private String username;
+
+    @Required(message = "Full name is required")
+    @Name(message = "Invalid name format")
+    private String fullName;
+
+    @Required(message = "Password is required")
+    @MinLength(min = 12, message = "Password must be at least 12 characters")
+    @MustContainMin(min = 2, alphabet = ALPHA_LOWERCASE, message = "At least 2 lowercase letters")
+    @MustContainMin(min = 2, alphabet = ALPHA_UPPERCASE, message = "At least 2 uppercase letters")
+    @MustContainMin(min = 2, alphabet = NUMBER, message = "At least 2 numbers")
+    @MustContainOne(alphabet = "@#$%^&*", message = "At least one special character")
+    @NotContain(alphabet = " ", message = "Password cannot contain spaces")
+    private String password;
+
+    @Required
+    @Length(length = 5, message = "ZIP code must be exactly 5 digits")
+    @OnlyNumbers(message = "ZIP code must contain only digits")
+    private String zipCode;
+
+    // Constructors, getters, setters...
+}
+```
+
+## Using Alphabets
+
+The `Alphabets` class provides predefined character sets for common validation scenarios:
+
+```java
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+// Available alphabets:
+BIN                // "01"
+OCT                // "01234567"
+HEX                // "0123456789aAbBcCdDeEfF"
+NUMBER             // "0123456789"
+ALPHABET           // "aAbBcC...zZ"
+ALPHA_LOWERCASE    // "abcdefghijklmnopqrstuvwxyz"
+ALPHA_UPPERCASE    // "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+ALPHA_NUMERIC      // "0123456789aAbBcC...zZ"
+ALPHABET_ES        // Spanish alphabet with accents
+ALPHA_LOWERCASE_ES // Spanish lowercase with accents
+ALPHA_UPPERCASE_ES // Spanish uppercase with accents
+ALPHA_NUMERIC_ES   // Spanish alphanumeric with accents
+```
+
+For more information, see the [Alphabets utility documentation](/api/utilities/alphabets).
+
+## Next Steps
+
+- Learn about [Numeric Annotations](./numeric-annotations)
+- Explore [Format Annotations](./format-annotations)
+- Read the [Annotations Overview](./overview)

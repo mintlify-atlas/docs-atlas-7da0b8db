@@ -1,0 +1,358 @@
+---
+title: Numeric Annotations
+description: Annotations for validating numeric values and patterns
+---
+
+## Overview
+
+Numeric annotations in Validator help you validate String fields that represent numeric values. These annotations ensure that strings contain valid numbers and that those numbers fall within specified ranges.
+
+## Number Validation
+
+### @Number
+
+Validates that the String is a numeric format.
+
+**Attributes:**
+- `message` (optional): Error message
+
+**Default Message:** "It is not a number"
+
+**Example:**
+```java
+@Number
+private String price;
+
+// With custom message
+@Number(message = "Please enter a valid number")
+private String quantity;
+```
+
+<Note>
+  This annotation validates integers, decimals, and negative values. For example: "123", "-45.67", "0.5" are all valid.
+</Note>
+
+**Valid formats:**
+- Integers: "123", "-456"
+- Decimals: "123.45", "-67.89"
+- Zero: "0", "0.0"
+
+## Value Range Validation
+
+### @MinValue
+
+Validates that the numeric value of the String is not less than the specified minimum.
+
+**Attributes:**
+- `min` (required): Minimum value (double)
+- `message` (optional): Error message
+
+**Default Message:** "The value cannot be less than %1$.2f"
+
+**Example:**
+```java
+@Number
+@MinValue(min = 0.0)
+private String price;
+
+// With custom message
+@Number
+@MinValue(min = 18.0, message = "Must be at least 18")
+private String age;
+
+// Negative minimum
+@Number
+@MinValue(min = -100.0, message = "Value must be greater than -100")
+private String temperature;
+```
+
+<Warning>
+  It is recommended to use `@Number` before `@MinValue` to ensure the string is a valid number first.
+</Warning>
+
+---
+
+### @MaxValue
+
+Validates that the numeric value of the String is not greater than the specified maximum.
+
+**Attributes:**
+- `max` (required): Maximum value (double)
+- `message` (optional): Error message
+
+**Default Message:** "The value cannot be greater than %1$.2f"
+
+**Example:**
+```java
+@Number
+@MaxValue(max = 100.0)
+private String percentage;
+
+// With custom message
+@Number
+@MaxValue(max = 999.99, message = "Price cannot exceed $999.99")
+private String itemPrice;
+
+// Large maximum
+@Number
+@MaxValue(max = 1000000.0, message = "Value too large")
+private String salary;
+```
+
+<Warning>
+  It is recommended to use `@Number` before `@MaxValue` to ensure the string is a valid number first.
+</Warning>
+
+---
+
+### @RangeValue
+
+Validates that the numeric value of the String is within the established range.
+
+**Attributes:**
+- `min` (required): Minimum value (double)
+- `max` (required): Maximum value (double)
+- `message` (optional): Error message
+
+**Default Message:** "The value must be between %1$.2f and %1$.2f"
+
+**Example:**
+```java
+@Number
+@RangeValue(min = 0.0, max = 100.0)
+private String percentage;
+
+// With custom message
+@Number
+@RangeValue(min = 18.0, max = 120.0, message = "Age must be between 18 and 120")
+private String age;
+
+// Decimal range
+@Number
+@RangeValue(min = -273.15, max = 1000.0, message = "Temperature out of range")
+private String temperature;
+```
+
+<Warning>
+  It is recommended to use `@Number` before `@RangeValue` to ensure the string is a valid number first.
+</Warning>
+
+## Pattern Validation
+
+### @NumberPattern
+
+Validates that the String matches a specific pattern where 'x' represents digits.
+
+**Attributes:**
+- `patter` (required): String with the pattern (note the typo in the attribute name)
+- `message` (optional): Error message
+
+**Default Message:** "Does not match pattern %s"
+
+**Example:**
+```java
+@NumberPattern(patter = "(xxxx) xxx-xxxx")
+private String phoneNumber;
+
+// Credit card pattern
+@NumberPattern(patter = "xxxx-xxxx-xxxx-xxxx", message = "Invalid card number format")
+private String creditCard;
+
+// Social security number
+@NumberPattern(patter = "xxx-xx-xxxx", message = "Invalid SSN format")
+private String ssn;
+
+// International phone
+@NumberPattern(patter = "+xx (xxx) xxx-xx-xx", message = "Invalid phone format")
+private String internationalPhone;
+```
+
+<Note>
+  In the pattern, 'x' can be replaced by any digit (0-9) or remain as 'x'. All other characters must match exactly.
+</Note>
+
+**Valid examples for pattern `+xx (xxx) xxx-xx-xx`:**
+- `+12 (345) 678-90-12` ✓
+- `+xx (345) 678-90-12` ✓
+- `+xx (xxx) xxx-xx-xx` ✓
+- `+12 (345) 678-90-1` ✗ (missing digit)
+- `+12 345 678-90-12` ✗ (missing parentheses)
+
+## Complete Examples
+
+### E-commerce Product Form
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+
+public class Product {
+    @Required(message = "Product name is required")
+    @MinLength(min = 3, message = "Name must be at least 3 characters")
+    private String name;
+
+    @Required(message = "Price is required")
+    @Number(message = "Price must be a valid number")
+    @MinValue(min = 0.01, message = "Price must be greater than 0")
+    @MaxValue(max = 999999.99, message = "Price cannot exceed $999,999.99")
+    private String price;
+
+    @Required(message = "Quantity is required")
+    @Number(message = "Quantity must be a number")
+    @MinValue(min = 0.0, message = "Quantity cannot be negative")
+    private String quantity;
+
+    @Number(message = "Discount must be a number")
+    @RangeValue(min = 0.0, max = 100.0, message = "Discount must be between 0% and 100%")
+    private String discountPercentage;
+
+    // Constructors, getters, setters...
+}
+```
+
+### User Registration Form
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+
+public class UserRegistration {
+    @Required(message = "Name is required")
+    @Name(message = "Invalid name format")
+    private String fullName;
+
+    @Required(message = "Age is required")
+    @Number(message = "Age must be a number")
+    @MinValue(min = 18.0, message = "Must be at least 18 years old")
+    @MaxValue(max = 120.0, message = "Invalid age")
+    private String age;
+
+    @Required(message = "Phone number is required")
+    @NumberPattern(patter = "(xxxx) xxx-xxxx", message = "Phone format: (1234) 567-8901")
+    private String phone;
+
+    @NumberPattern(patter = "xxxx-xxxx-xxxx-xxxx", message = "Card format: 1234-5678-9012-3456")
+    private String creditCard;
+
+    // Constructors, getters, setters...
+}
+```
+
+### Financial Application
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+
+public class Transaction {
+    @Required(message = "Amount is required")
+    @Number(message = "Amount must be a valid number")
+    @MinValue(min = 0.01, message = "Amount must be greater than 0")
+    private String amount;
+
+    @Required(message = "Account number is required")
+    @NumberPattern(patter = "xxxx-xxxx-xxxx", message = "Account format: 1234-5678-9012")
+    private String accountNumber;
+
+    @Number(message = "Interest rate must be a number")
+    @RangeValue(min = 0.0, max = 100.0, message = "Interest rate must be between 0% and 100%")
+    private String interestRate;
+
+    @Number(message = "Balance must be a number")
+    @MinValue(min = 0.0, message = "Balance cannot be negative")
+    private String accountBalance;
+
+    // Constructors, getters, setters...
+}
+```
+
+## Combining with String Annotations
+
+You can combine numeric annotations with string annotations for comprehensive validation:
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+
+public class FormData {
+    // Ensure it's required, has a specific length, only contains numbers, and is in range
+    @Required
+    @Length(length = 5)
+    @OnlyNumbers
+    @Number
+    @RangeValue(min = 10000.0, max = 99999.0)
+    private String zipCode;
+
+    // Ensure phone is required, matches pattern, and only contains allowed characters
+    @Required
+    @NumberPattern(patter = "xxx-xxx-xxxx")
+    @ShouldOnlyContain(alphabet = "0123456789-")
+    private String phone;
+
+    // Constructors, getters, setters...
+}
+```
+
+## Validation Order Best Practices
+
+When combining annotations, consider this recommended order:
+
+1. **@Required** - Ensure the field is not null or empty
+2. **@Number** - Verify it's a valid number format
+3. **@MinValue / @MaxValue / @RangeValue** - Check the numeric range
+
+```java
+// Good order
+@Required(message = "Price is required")
+@Number(message = "Price must be a number")
+@MinValue(min = 0.0, message = "Price cannot be negative")
+private String price;
+
+// Less optimal (will fail at @MinValue if not a number)
+@Required
+@MinValue(min = 0.0)  // Will try to parse non-numeric string
+@Number
+private String price;
+```
+
+## Tips and Common Patterns
+
+### Age Validation
+```java
+@Required
+@Number
+@RangeValue(min = 0.0, max = 150.0, message = "Invalid age")
+private String age;
+```
+
+### Currency Validation
+```java
+@Required
+@Number
+@MinValue(min = 0.0, message = "Amount cannot be negative")
+private String amount;
+```
+
+### Percentage Validation
+```java
+@Number
+@RangeValue(min = 0.0, max = 100.0, message = "Must be between 0 and 100")
+private String percentage;
+```
+
+### Phone Number Validation
+```java
+@Required
+@NumberPattern(patter = "(xxx) xxx-xxxx")
+private String phone;
+```
+
+### Credit Card Validation
+```java
+@Required
+@NumberPattern(patter = "xxxx xxxx xxxx xxxx")
+private String creditCard;
+```
+
+## Next Steps
+
+- Explore [String Annotations](./string-annotations) for text validation
+- Learn about [Format Annotations](./format-annotations) for specialized formats
+- Read the [Annotations Overview](./overview)
+- Check out the [Validator class documentation](/api/validator)

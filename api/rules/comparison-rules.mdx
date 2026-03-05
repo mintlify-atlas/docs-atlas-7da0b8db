@@ -1,0 +1,514 @@
+---
+title: Comparison Rules
+description: Validation rules for comparing and matching field values
+---
+
+## Overview
+
+Comparison rules allow you to validate that two String values match, which is commonly used for password confirmation, email verification, and other scenarios where duplicate entry is required.
+
+## Instance Methods
+
+### isMatch
+
+Validates that two Strings match AND that they meet all configured validation rules.
+
+```java
+public boolean isMatch(String evaluate, String compare)
+```
+
+<ParamField path="evaluate" type="String" required>
+  The primary String to validate
+</ParamField>
+
+<ParamField path="compare" type="String" required>
+  The String to compare against
+</ParamField>
+
+**Returns:** `true` if both strings match exactly and pass all validation rules, `false` otherwise
+
+**Notes:**
+- First checks if the strings are equal
+- Then validates the primary string against all configured rules
+- If comparison fails or validation fails, invokes the `onInvalidEvaluation` handler
+- Use `setNotMatchMessage()` to customize the error message for comparison failures
+
+**Example:**
+
+```java
+Validator passwordValidator = new Validator();
+passwordValidator.required();
+passwordValidator.minLength(8);
+passwordValidator.mustContainOne("0123456789");
+passwordValidator.setNotMatchMessage("Passwords do not match");
+
+passwordValidator.onInvalidEvaluation(error -> {
+    System.err.println(error);
+});
+
+String password = "SecurePass123";
+String confirmPassword = "SecurePass123";
+
+if (passwordValidator.isMatch(password, confirmPassword)) {
+    System.out.println("Passwords match and are valid");
+} else {
+    System.out.println("Validation failed");
+}
+```
+
+**Validation Flow:**
+
+```java
+// Scenario 1: Strings don't match
+passwordValidator.isMatch("Password1", "Password2"); 
+// Returns: false
+// Invokes onInvalidEvaluation with: "Passwords do not match"
+
+// Scenario 2: Strings match but fail validation
+passwordValidator.isMatch("short", "short");
+// Returns: false  
+// Invokes onInvalidEvaluation with: "Must be at least 8 characters" (or similar)
+
+// Scenario 3: Strings match and pass validation
+passwordValidator.isMatch("SecurePass123", "SecurePass123");
+// Returns: true
+```
+
+---
+
+### compareOrFail
+
+Validates that two Strings match and meet all rules, throwing an exception on failure.
+
+```java
+public void compareOrFail(String key, String evaluate, String compare) 
+    throws InvalidEvaluationException
+```
+
+<ParamField path="key" type="String" required>
+  Identifier for the field being validated (used in exception)
+</ParamField>
+
+<ParamField path="evaluate" type="String" required>
+  The primary String to validate
+</ParamField>
+
+<ParamField path="compare" type="String" required>
+  The String to compare against
+</ParamField>
+
+**Throws:** `InvalidEvaluationException` containing:
+- `key`: The field identifier
+- `evaluate`: The value that failed validation
+- `message`: The error message (either comparison error or rule violation)
+
+**Example:**
+
+```java
+Validator emailValidator = new Validator();
+emailValidator.required();
+emailValidator.email();
+emailValidator.setNotMatchMessage("Email addresses do not match");
+
+String email = "user@example.com";
+String confirmEmail = "user@example.com";
+
+try {
+    emailValidator.compareOrFail("email", email, confirmEmail);
+    System.out.println("Email confirmed successfully");
+} catch (InvalidEvaluationException e) {
+    System.err.println("Field: " + e.getKey());
+    System.err.println("Value: " + e.getValue());
+    System.err.println("Error: " + e.getMessage());
+}
+```
+
+**Error Scenarios:**
+
+```java
+try {
+    // Strings don't match
+    emailValidator.compareOrFail("email", "user1@example.com", "user2@example.com");
+} catch (InvalidEvaluationException e) {
+    // e.getMessage() returns: "Email addresses do not match"
+}
+
+try {
+    // Strings match but fail email validation
+    emailValidator.compareOrFail("email", "invalid-email", "invalid-email");
+} catch (InvalidEvaluationException e) {
+    // e.getMessage() returns: "Invalid email format" (or default email message)
+}
+```
+
+---
+
+### setNotMatchMessage
+
+Sets a custom error message for comparison failures.
+
+```java
+public void setNotMatchMessage(String message)
+```
+
+<ParamField path="message" type="String" required>
+  The error message to display when strings don't match
+</ParamField>
+
+**Example:**
+
+```java
+Validator validator = new Validator();
+validator.setNotMatchMessage("The values do not match");
+validator.setNotMatchMessage("Passwords must be identical");
+validator.setNotMatchMessage("Email confirmation does not match");
+```
+
+**Default Message:**
+
+If not set, uses the default message from the configured `Messages` implementation (typically "Fields do not match" or similar).
+
+## Annotation-Based Comparison
+
+### @Compare Annotation
+
+The `@Compare` annotation provides declarative field comparison for annotation-based validation.
+
+```java
+@Compare(compareWith = "fieldName")
+@Compare(compareWith = "fieldName", message = "Custom error message")
+```
+
+<ParamField path="compareWith" type="String" required>
+  The name of the field to compare with
+</ParamField>
+
+<ParamField path="message" type="String">
+  Custom error message (optional - uses default if not provided)
+</ParamField>
+
+**Example:**
+
+```java
+public class UserRegistration {
+    @Required
+    @MinLength(min = 8)
+    private String password;
+    
+    @Compare(compareWith = "password", message = "Passwords do not match")
+    private String confirmPassword;
+    
+    @Required
+    @Email
+    private String email;
+    
+    @Compare(compareWith = "email")
+    private String confirmEmail;
+}
+
+UserRegistration registration = new UserRegistration();
+try {
+    Validator.validOrFail(registration);
+    System.out.println("Registration is valid");
+} catch (InvalidEvaluationException e) {
+    System.err.println(e.getKey() + ": " + e.getMessage());
+}
+```
+
+**How It Works:**
+
+1. The `@Compare` annotation is placed on the confirmation field
+2. It references another field by name using `compareWith`
+3. During validation, both fields are checked:
+   - The referenced field must exist
+   - Both values must be non-null and non-empty
+   - The values must match exactly
+4. If comparison fails, throws `InvalidEvaluationException`
+
+**Error Cases:**
+
+```java
+public class Example {
+    private String password = "MyPassword123";
+    
+    // Case 1: Field doesn't exist
+    @Compare(compareWith = "nonExistentField") 
+    private String confirmPassword;
+    // Throws: InvalidEvaluationException
+    
+    // Case 2: Referenced field is null/empty
+    private String email = null;
+    @Compare(compareWith = "email")
+    private String confirmEmail = "user@example.com";
+    // Throws: InvalidEvaluationException
+    
+    // Case 3: Values don't match
+    private String newPassword = "Password1";
+    @Compare(compareWith = "newPassword")
+    private String confirmNewPassword = "Password2";
+    // Throws: InvalidEvaluationException with message
+}
+```
+
+## Complete Examples
+
+### Password Confirmation
+
+```java
+public class PasswordChange {
+    @Required
+    @MinLength(min = 8)
+    @MustContainOne(alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    @MustContainOne(alphabet = "0123456789")
+    @MustContainOne(alphabet = "!@#$%^&*")
+    private String newPassword;
+    
+    @Compare(
+        compareWith = "newPassword",
+        message = "Password confirmation does not match"
+    )
+    private String confirmPassword;
+    
+    // Getters and setters
+}
+
+// Usage
+PasswordChange change = new PasswordChange();
+change.setNewPassword("SecurePass123!");
+change.setConfirmPassword("SecurePass123!");
+
+try {
+    Validator.validOrFail(change);
+    System.out.println("Password change validated");
+} catch (InvalidEvaluationException e) {
+    System.err.println("Validation failed: " + e.getMessage());
+}
+```
+
+### Email Confirmation
+
+```java
+Validator emailValidator = new Validator.Builder()
+    .required("Email is required")
+    .email("Invalid email format")
+    .maxLength(255)
+    .build();
+
+emailValidator.setNotMatchMessage("Email addresses do not match");
+emailValidator.onInvalidEvaluation(error -> {
+    displayErrorToUser(error);
+});
+
+String email = getEmailInput();
+String confirmEmail = getConfirmEmailInput();
+
+if (emailValidator.isMatch(email, confirmEmail)) {
+    proceedWithRegistration(email);
+}
+```
+
+### Form Validation with Multiple Comparisons
+
+```java
+public class RegistrationForm {
+    @Required
+    @Email
+    private String email;
+    
+    @Compare(
+        compareWith = "email",
+        message = "Email confirmation does not match"
+    )
+    private String confirmEmail;
+    
+    @Required
+    @MinLength(min = 8)
+    @MustContainOne(alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    @MustContainOne(alphabet = "0123456789")
+    private String password;
+    
+    @Compare(
+        compareWith = "password",
+        message = "Password confirmation does not match"
+    )
+    private String confirmPassword;
+    
+    // Getters and setters
+}
+
+// Validate entire form
+RegistrationForm form = new RegistrationForm();
+form.setEmail("user@example.com");
+form.setConfirmEmail("user@example.com");
+form.setPassword("SecurePass123");
+form.setConfirmPassword("SecurePass123");
+
+try {
+    Validator.validOrFail(form);
+    createUserAccount(form);
+} catch (InvalidEvaluationException e) {
+    showFormError(e.getKey(), e.getMessage());
+}
+```
+
+### Programmatic Comparison with Builder
+
+```java
+Validator passwordValidator = new Validator.Builder()
+    .required("Password is required")
+    .minLength(8, "Password must be at least 8 characters")
+    .mustContainOne("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "Must contain uppercase")
+    .mustContainOne("abcdefghijklmnopqrstuvwxyz", "Must contain lowercase") 
+    .mustContainOne("0123456789", "Must contain a number")
+    .setNotMatchMessage("Passwords do not match")
+    .onInvalidEvaluation(error -> {
+        passwordErrorLabel.setText(error);
+        passwordErrorLabel.setVisible(true);
+    })
+    .build();
+
+// In form submission handler
+String password = passwordField.getText();
+String confirmPassword = confirmPasswordField.getText();
+
+try {
+    passwordValidator.compareOrFail("password", password, confirmPassword);
+    submitForm();
+} catch (InvalidEvaluationException e) {
+    // Error already shown via onInvalidEvaluation
+    return;
+}
+```
+
+### Account Settings Update
+
+```java
+public class AccountSettings {
+    // Only require confirmation if changing email
+    public void updateEmail(String newEmail, String confirmEmail) 
+            throws InvalidEvaluationException {
+        
+        Validator emailValidator = new Validator.Builder()
+            .required("Email is required")
+            .email("Invalid email format")
+            .maxLength(255)
+            .setNotMatchMessage("Email addresses must match")
+            .build();
+        
+        emailValidator.compareOrFail("email", newEmail, confirmEmail);
+        
+        // Update email in database
+        updateUserEmail(newEmail);
+    }
+    
+    public void updatePassword(String newPassword, String confirmPassword)
+            throws InvalidEvaluationException {
+        
+        Validator passwordValidator = new Validator();
+        passwordValidator.required();
+        passwordValidator.minLength(8);
+        passwordValidator.mustContainOne("0123456789");
+        passwordValidator.setNotMatchMessage("Passwords must match");
+        
+        passwordValidator.compareOrFail("password", newPassword, confirmPassword);
+        
+        // Hash and update password
+        updateUserPassword(hashPassword(newPassword));
+    }
+}
+```
+
+## Best Practices
+
+### 1. Always Set Custom Messages
+
+```java
+// Good - clear, specific message
+validator.setNotMatchMessage("Passwords do not match");
+validator.setNotMatchMessage("Email confirmation does not match");
+
+// Less helpful - generic message
+validator.setNotMatchMessage("Fields do not match");
+```
+
+### 2. Use Annotations for DTOs
+
+```java
+// Good - declarative, clear
+public class SignupDTO {
+    @Email
+    private String email;
+    
+    @Compare(compareWith = "email")
+    private String confirmEmail;
+}
+
+// Alternative - programmatic (more flexible)
+Validator validator = new Validator.Builder()
+    .email()
+    .build();
+validator.isMatch(email, confirmEmail);
+```
+
+### 3. Validate Before Comparing
+
+```java
+// Good - validates format first, then compares
+validator.required();
+validator.email();
+validator.maxLength(255);
+if (validator.isMatch(email, confirmEmail)) {
+    // Both match and are valid emails
+}
+
+// Less ideal - only checks if they match
+if (email.equals(confirmEmail)) {
+    // Might both be invalid emails
+}
+```
+
+### 4. Use compareOrFail for Exception-Based Flow
+
+```java
+// Good for exception-based error handling
+try {
+    passwordValidator.compareOrFail("password", password, confirmPassword);
+    userService.createAccount(user);
+} catch (InvalidEvaluationException e) {
+    return ResponseEntity.badRequest()
+        .body(new ErrorResponse(e.getKey(), e.getMessage()));
+}
+
+// Good for boolean-based flow
+if (passwordValidator.isMatch(password, confirmPassword)) {
+    userService.createAccount(user);
+} else {
+    // Handle validation failure
+}
+```
+
+### 5. Handle onInvalidEvaluation for UI Feedback
+
+```java
+Validator validator = new Validator.Builder()
+    .required()
+    .email()
+    .setNotMatchMessage("Email addresses do not match")
+    .onInvalidEvaluation(errorMessage -> {
+        // Show error in UI immediately
+        errorLabel.setText(errorMessage);
+        errorLabel.setVisible(true);
+        inputField.setError(true);
+    })
+    .build();
+
+// Error shown automatically when validation fails
+validator.isMatch(email, confirmEmail);
+```
+
+## See Also
+
+- [Validator](/api/validator) - Main validation class with isMatch and compareOrFail methods
+- [String Rules](/api/rules/string-rules) - String validation rules to use before comparison
+- [Format Rules](/api/rules/format-rules) - Format validation rules (email, etc.)
+- [Numeric Rules](/api/rules/numeric-rules) - Numeric validation rules

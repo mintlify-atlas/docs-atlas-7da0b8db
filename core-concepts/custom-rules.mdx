@@ -1,0 +1,549 @@
+---
+title: Custom Rules
+description: Create custom validation logic with lambda expressions and method references
+---
+
+While Validator provides 27 predefined rules, real-world applications often require custom validation logic. The `.rule()` method allows you to define arbitrary validation logic using lambda expressions or method references.
+
+## The rule() Method
+
+The `rule()` method accepts two parameters:
+1. An error message (String)
+2. A validation function that returns `true` for valid input, `false` for invalid
+
+### Basic Syntax
+
+```java
+validator.rule("Error message if validation fails", (String evaluate) -> {
+    // Your validation logic
+    return true; // or false
+});
+```
+
+### Using the Builder Pattern
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+
+Validator validator = new Validator.Builder()
+    .rule("Enter a text other than null", (String evaluate) -> {
+        return evaluate != null;
+    })
+    .rule("The text must equal 'xxx'", (String evaluate) -> {
+        return evaluate.equals("xxx");
+    })
+    .build();
+```
+
+<Info>
+  Custom rules are evaluated in the same sequential order as predefined rules. When a custom rule fails, the error message is returned and remaining rules are skipped.
+</Info>
+
+## Lambda Expressions
+
+Java lambda expressions provide a concise way to define validation logic inline.
+
+### Simple Lambda Examples
+
+```java
+// Check if not null
+validator.rule("Value cannot be null", value -> value != null);
+
+// Check specific value
+validator.rule("Must be 'admin'", value -> value.equals("admin"));
+
+// Check length
+validator.rule("Must be more than 10 characters", value -> value.length() > 10);
+
+// Check starts with
+validator.rule("Must start with 'USER_'", value -> value.startsWith("USER_"));
+
+// Check ends with
+validator.rule("Must end with '.com'", value -> value.endsWith(".com"));
+
+// Check contains
+validator.rule("Must contain '@'", value -> value.contains("@"));
+```
+
+### Multi-line Lambda Logic
+
+```java
+validator.rule("Complex validation failed", value -> {
+    if (value == null || value.isEmpty()) {
+        return false;
+    }
+    
+    // Remove whitespace
+    String trimmed = value.trim();
+    
+    // Check if starts with letter
+    if (!Character.isLetter(trimmed.charAt(0))) {
+        return false;
+    }
+    
+    // Check if contains only alphanumeric
+    return trimmed.matches("[a-zA-Z0-9]+");
+});
+```
+
+## Method References
+
+Method references provide a cleaner syntax when your validation logic already exists as a method.
+
+### Static Method References
+
+```java
+import java.util.Objects;
+
+Validator validator = new Validator.Builder()
+    .rule("Value cannot be null", Objects::nonNull)
+    .build();
+```
+
+### Instance Method References
+
+```java
+public class UserValidator {
+    
+    private final Validator usernameValidator;
+    
+    public UserValidator() {
+        usernameValidator = new Validator.Builder()
+            .required()
+            .minLength(3)
+            .rule("Username already exists", this::isUsernameAvailable)
+            .rule("Username contains profanity", this::isProfanityFree)
+            .build();
+    }
+    
+    private boolean isUsernameAvailable(String username) {
+        // Check database
+        return !database.existsByUsername(username);
+    }
+    
+    private boolean isProfanityFree(String username) {
+        // Check against profanity list
+        return !profanityFilter.contains(username);
+    }
+}
+```
+
+## Real-World Custom Rule Examples
+
+### Database Uniqueness Check
+
+```java
+public class UserRegistration {
+    
+    private final Validator emailValidator;
+    private final UserRepository userRepository;
+    
+    public UserRegistration(UserRepository userRepository) {
+        this.userRepository = userRepository;
+        
+        this.emailValidator = new Validator.Builder()
+            .required("Email is required")
+            .email("Invalid email format")
+            .rule("Email already registered", email -> {
+                return !userRepository.existsByEmail(email);
+            })
+            .build();
+    }
+}
+```
+
+### Business Logic Validation
+
+```java
+public class PromoCodeValidator {
+    
+    private final Validator promoValidator;
+    private final PromoCodeService promoService;
+    private final String userId;
+    
+    public PromoCodeValidator(PromoCodeService promoService, String userId) {
+        this.promoService = promoService;
+        this.userId = userId;
+        
+        this.promoValidator = new Validator.Builder()
+            .required("Promo code is required")
+            .onlyAlphanumeric("Invalid promo code format")
+            .rule("Promo code does not exist", code -> {
+                return promoService.exists(code);
+            })
+            .rule("Promo code has expired", code -> {
+                return !promoService.isExpired(code);
+            })
+            .rule("Promo code already used", code -> {
+                return !promoService.hasUserUsed(userId, code);
+            })
+            .rule("Promo code reached usage limit", code -> {
+                return promoService.hasRemainingUses(code);
+            })
+            .build();
+    }
+}
+```
+
+### API Key Validation
+
+```java
+public class ApiKeyValidator {
+    
+    private final Validator apiKeyValidator = new Validator.Builder()
+        .required("API key is required")
+        .length(32, "API key must be exactly 32 characters")
+        .rule("API key must contain only hexadecimal characters", key -> {
+            return key.matches("[0-9a-fA-F]+");
+        })
+        .rule("API key is invalid or revoked", this::isApiKeyValid)
+        .rule("API key has expired", this::isApiKeyActive)
+        .rule("API key lacks required permissions", this::hasRequiredPermissions)
+        .build();
+    
+    private boolean isApiKeyValid(String apiKey) {
+        ApiKey key = apiKeyRepository.findByKey(apiKey);
+        return key != null && !key.isRevoked();
+    }
+    
+    private boolean isApiKeyActive(String apiKey) {
+        ApiKey key = apiKeyRepository.findByKey(apiKey);
+        return key != null && key.getExpirationDate().isAfter(LocalDate.now());
+    }
+    
+    private boolean hasRequiredPermissions(String apiKey) {
+        ApiKey key = apiKeyRepository.findByKey(apiKey);
+        return key != null && key.hasPermission("READ_USERS");
+    }
+}
+```
+
+### File Upload Validation
+
+```java
+public class FileUploadValidator {
+    
+    private static final List<String> ALLOWED_EXTENSIONS = 
+        Arrays.asList(".jpg", ".jpeg", ".png", ".gif");
+    
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    
+    private final Validator filenameValidator = new Validator.Builder()
+        .required("Filename is required")
+        .rule("Filename contains invalid characters", filename -> {
+            return !filename.matches(".*[<>:\"/\\\\|?*].*");
+        })
+        .rule("File extension not allowed", filename -> {
+            String lower = filename.toLowerCase();
+            return ALLOWED_EXTENSIONS.stream().anyMatch(lower::endsWith);
+        })
+        .build();
+    
+    public boolean validateFile(String filename, long fileSize) {
+        if (!filenameValidator.isValid(filename)) {
+            return false;
+        }
+        
+        if (fileSize > MAX_FILE_SIZE) {
+            showError("File size exceeds 5MB limit");
+            return false;
+        }
+        
+        return true;
+    }
+}
+```
+
+## Combining Predefined and Custom Rules
+
+Custom rules work seamlessly with predefined rules:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class CompanyCodeValidator {
+    
+    private final Validator codeValidator = new Validator.Builder()
+        // Predefined rules
+        .required("Company code is required")
+        .length(8, "Company code must be exactly 8 characters")
+        .onlyAlphanumeric("Only letters and numbers allowed")
+        
+        // Custom rules
+        .rule("Code must start with 'CP'", code -> code.startsWith("CP"))
+        .rule("Code must end with 2 digits", code -> {
+            String lastTwo = code.substring(code.length() - 2);
+            return lastTwo.matches("\\d{2}");
+        })
+        .rule("Company code already exists", this::isCodeUnique)
+        .build();
+    
+    private boolean isCodeUnique(String code) {
+        return !companyRepository.existsByCode(code);
+    }
+}
+```
+
+<Note>
+  Place custom rules after predefined rules that validate basic format and constraints. This ensures efficient validation order.
+</Note>
+
+## Accessing External State
+
+Lambdas can access external variables and services:
+
+```java
+public class SubscriptionValidator {
+    
+    private final PlanService planService;
+    private final UserService userService;
+    private final String currentUserId;
+    
+    public SubscriptionValidator(PlanService planService, 
+                                UserService userService, 
+                                String currentUserId) {
+        this.planService = planService;
+        this.userService = userService;
+        this.currentUserId = currentUserId;
+    }
+    
+    public Validator createPlanValidator() {
+        return new Validator.Builder()
+            .required("Plan ID is required")
+            .rule("Plan does not exist", planId -> {
+                return planService.exists(planId);
+            })
+            .rule("Plan is not available", planId -> {
+                Plan plan = planService.findById(planId);
+                return plan != null && plan.isActive();
+            })
+            .rule("User already subscribed to this plan", planId -> {
+                return !userService.hasActivePlan(currentUserId, planId);
+            })
+            .rule("User doesn't meet plan requirements", planId -> {
+                User user = userService.findById(currentUserId);
+                Plan plan = planService.findById(planId);
+                return plan != null && plan.meetsRequirements(user);
+            })
+            .build();
+    }
+}
+```
+
+## Complex Validation Patterns
+
+### Conditional Validation
+
+```java
+public class ConditionalValidator {
+    
+    private final String accountType;
+    
+    public ConditionalValidator(String accountType) {
+        this.accountType = accountType;
+    }
+    
+    public Validator createAccountNumberValidator() {
+        Validator.Builder builder = new Validator.Builder()
+            .required("Account number is required");
+        
+        if ("business".equals(accountType)) {
+            builder.rule("Business accounts must start with 'B'", 
+                num -> num.startsWith("B"));
+            builder.minLength(10, "Business account must be 10 digits");
+        } else {
+            builder.rule("Personal accounts must start with 'P'", 
+                num -> num.startsWith("P"));
+            builder.minLength(8, "Personal account must be 8 digits");
+        }
+        
+        return builder.build();
+    }
+}
+```
+
+### Multi-Field Validation
+
+```java
+public class PaymentValidator {
+    
+    private String cardType;
+    
+    public Validator createCardNumberValidator(String cardType) {
+        this.cardType = cardType;
+        
+        return new Validator.Builder()
+            .required("Card number is required")
+            .onlyNumbers("Card number must contain only digits")
+            .rule("Invalid card number length", this::validateCardLength)
+            .rule("Card number failed Luhn check", this::validateLuhn)
+            .build();
+    }
+    
+    private boolean validateCardLength(String cardNumber) {
+        switch (cardType) {
+            case "VISA":
+                return cardNumber.length() == 16;
+            case "AMEX":
+                return cardNumber.length() == 15;
+            case "MASTERCARD":
+                return cardNumber.length() == 16;
+            default:
+                return false;
+        }
+    }
+    
+    private boolean validateLuhn(String cardNumber) {
+        // Luhn algorithm implementation
+        int sum = 0;
+        boolean alternate = false;
+        
+        for (int i = cardNumber.length() - 1; i >= 0; i--) {
+            int digit = Character.getNumericValue(cardNumber.charAt(i));
+            
+            if (alternate) {
+                digit *= 2;
+                if (digit > 9) {
+                    digit = (digit % 10) + 1;
+                }
+            }
+            
+            sum += digit;
+            alternate = !alternate;
+        }
+        
+        return (sum % 10 == 0);
+    }
+}
+```
+
+## Error Handling in Custom Rules
+
+### Safe Validation
+
+Ensure your custom rules handle edge cases:
+
+```java
+validator.rule("Invalid format", value -> {
+    try {
+        // Safely parse and validate
+        int number = Integer.parseInt(value);
+        return number > 0;
+    } catch (NumberFormatException e) {
+        // Invalid number format
+        return false;
+    }
+});
+```
+
+### Null Safety
+
+```java
+validator.rule("Must contain hyphen", value -> {
+    // Always check for null if not using @Required first
+    if (value == null) {
+        return false;
+    }
+    return value.contains("-");
+});
+
+// Better: Use required() first
+Validator validator = new Validator.Builder()
+    .required()  // Ensures non-null
+    .rule("Must contain hyphen", value -> value.contains("-"))
+    .build();
+```
+
+<Warning>
+  Always consider null and edge cases in custom rules, or ensure they come after `required()` in the validation chain.
+</Warning>
+
+## Testing Custom Rules
+
+```java
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class CustomRuleTest {
+    
+    @Test
+    public void testUsernameUniqueness() {
+        UserRepository mockRepo = mock(UserRepository.class);
+        when(mockRepo.existsByUsername("existing")).thenReturn(true);
+        when(mockRepo.existsByUsername("newuser")).thenReturn(false);
+        
+        Validator validator = new Validator.Builder()
+            .required()
+            .rule("Username taken", username -> 
+                !mockRepo.existsByUsername(username)
+            )
+            .build();
+        
+        assertFalse(validator.isValid("existing"));
+        assertTrue(validator.isValid("newuser"));
+    }
+}
+```
+
+## Best Practices
+
+<Accordion title="Keep rules focused and single-purpose">
+  Each custom rule should validate one specific condition. This makes error messages clear and rules reusable.
+  
+  ```java
+  // Good: Separate rules
+  .rule("Username taken", this::isUsernameAvailable)
+  .rule("Username contains profanity", this::isProfanityFree)
+  
+  // Bad: Multiple checks in one rule
+  .rule("Username invalid", username -> 
+      isUsernameAvailable(username) && isProfanityFree(username)
+  )
+  ```
+</Accordion>
+
+<Accordion title="Provide clear, actionable error messages">
+  Error messages should tell users exactly what's wrong and how to fix it.
+  
+  ```java
+  // Good
+  .rule("Email domain not allowed. Use your company email.", 
+      email -> email.endsWith("@company.com"))
+  
+  // Bad
+  .rule("Invalid", email -> email.endsWith("@company.com"))
+  ```
+</Accordion>
+
+<Accordion title="Consider performance for expensive operations">
+  If custom rules make database calls or API requests, consider caching or batching.
+  
+  ```java
+  // Cache results for repeated validation
+  private final Map<String, Boolean> usernameCache = new HashMap<>();
+  
+  private boolean isUsernameAvailable(String username) {
+      return usernameCache.computeIfAbsent(username, 
+          key -> !userRepository.existsByUsername(key)
+      );
+  }
+  ```
+</Accordion>
+
+<Accordion title="Order rules by cost">
+  Put cheap validations first, expensive ones last.
+  
+  ```java
+  new Validator.Builder()
+      .required()                              // Fast
+      .minLength(3)                            // Fast
+      .onlyAlphanumeric()                      // Fast
+      .rule("Username taken", this::checkDb)   // Slow (database)
+      .build();
+  ```
+</Accordion>
+
+<Info>
+  Custom rules give you unlimited flexibility to implement any validation logic your application requires, from simple format checks to complex business rules involving multiple systems.
+</Info>

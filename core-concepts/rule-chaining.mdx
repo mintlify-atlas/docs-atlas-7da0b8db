@@ -1,0 +1,394 @@
+---
+title: Rule Chaining
+description: Understand how to chain validation rules using the Builder pattern
+---
+
+Rule chaining is the core mechanism of the Validator library. It allows you to compose multiple validation rules that are evaluated sequentially, creating powerful and precise validation logic.
+
+## The Builder Pattern
+
+Validator uses the Builder pattern to create validators with chained rules. This provides a fluent, readable API for defining validation logic.
+
+### Basic Builder Usage
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+
+Validator validator = new Validator.Builder()
+    .required("This field is required")
+    .minLength(5, "Must be at least 5 characters")
+    .onlyNumbers("Only numbers are allowed")
+    .build();
+```
+
+Each method call adds a new rule to the validation chain. Call `.build()` to create the final `Validator` instance.
+
+### Alternative: Direct Instantiation
+
+You can also add rules to a Validator instance directly:
+
+```java
+Validator validator = new Validator();
+
+validator.rule("Enter a text other than null", (String evaluate) -> {
+    return evaluate != null;
+});
+
+validator.rule("The text is different from 'xxx'", (String evaluate) -> {
+    return evaluate.equals("xxx");
+});
+```
+
+<Info>
+  The Builder pattern is recommended for most use cases as it provides a cleaner, more chainable syntax.
+</Info>
+
+## Sequential Evaluation
+
+Rules are evaluated in the exact order they were added. This is crucial for understanding validation behavior.
+
+### Evaluation Order Example
+
+```java
+Validator zipCodeValidator = new Validator.Builder()
+    .required()         // Rule 1: Check if not null/empty
+    .minLength(5)       // Rule 2: Check minimum length
+    .onlyNumbers()      // Rule 3: Check if only numbers
+    .maxLength(5)       // Rule 4: Check maximum length
+    .build();
+```
+
+When you call `zipCodeValidator.isValid("123")`, the evaluation proceeds as follows:
+
+1. **Rule 1**: `required()` - Passes (not null/empty)
+2. **Rule 2**: `minLength(5)` - **Fails** (only 3 characters)
+3. **Evaluation stops** - Rules 3 and 4 are never evaluated
+
+<Warning>
+  When a rule fails, all remaining rules in the chain are ignored. Only one error message is returned per validation attempt.
+</Warning>
+
+### Why Order Matters
+
+Consider this example:
+
+```java
+// Incorrect order - may cause errors
+Validator badValidator = new Validator.Builder()
+    .minValue(18.0)     // This will fail if value is null!
+    .required()         // Checked too late
+    .build();
+
+// Correct order - checks existence first
+Validator goodValidator = new Validator.Builder()
+    .required()         // Check existence first
+    .number()           // Ensure it's a valid number
+    .minValue(18.0)     // Then check the value
+    .build();
+```
+
+<Note>
+  Always place `required()` first if you want to validate that a field exists before checking its format or value.
+</Note>
+
+## Logical Rule Ordering
+
+Follow these best practices when ordering rules:
+
+### 1. Existence Checks First
+
+```java
+Validator emailValidator = new Validator.Builder()
+    .required()         // 1. Does it exist?
+    .email()            // 2. Is it valid format?
+    .build();
+```
+
+### 2. Type/Format Validation Second
+
+```java
+Validator priceValidator = new Validator.Builder()
+    .required()         // 1. Exists?
+    .number()           // 2. Is it a number?
+    .minValue(0.01)     // 3. Check value constraints
+    .maxValue(9999.99)  // 4. Check upper bound
+    .build();
+```
+
+### 3. Length Before Content
+
+```java
+Validator passwordValidator = new Validator.Builder()
+    .required()                              // 1. Exists?
+    .minLength(8)                            // 2. Long enough?
+    .mustContainOne(ALPHA_UPPERCASE)         // 3. Contains uppercase?
+    .mustContainOne(NUMBER)                  // 4. Contains number?
+    .build();
+```
+
+### 4. Specific Rules Last
+
+```java
+Validator usernameValidator = new Validator.Builder()
+    .required()                              // 1. Exists?
+    .minLength(3)                            // 2. Long enough?
+    .maxLength(20)                           // 3. Not too long?
+    .onlyAlphanumeric()                      // 4. Valid characters?
+    .rule("Username is taken", username ->   // 5. Business logic
+        !isUsernameTaken(username)
+    )
+    .build();
+```
+
+## Predefined Rules
+
+Validator includes 27 predefined rules that can be chained together. Here are some commonly used combinations:
+
+### Email Validation Chain
+
+```java
+Validator emailValidator = new Validator.Builder()
+    .required("Email is required")
+    .email("Invalid email format")
+    .maxLength(255, "Email too long")
+    .build();
+```
+
+### Phone Number Chain
+
+```java
+Validator phoneValidator = new Validator.Builder()
+    .required("Phone number is required")
+    .numberPattern("(xxxx) xxx-xx-xx", "Invalid phone format")
+    .build();
+```
+
+### Strong Password Chain
+
+```java
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+Validator passwordValidator = new Validator.Builder()
+    .required()
+    .minLength(12)
+    .mustContainMin(3, ALPHA_LOWERCASE)
+    .mustContainMin(3, ALPHA_UPPERCASE)
+    .mustContainMin(3, NUMBER)
+    .mustContainMin(3, "@~_/")
+    .build();
+```
+
+### Date Validation Chain
+
+```java
+Validator birthDateValidator = new Validator.Builder()
+    .required()
+    .date("dd/MM/yyyy")
+    .minAge("dd/MM/yyyy", 18)
+    .build();
+```
+
+### Numeric Range Chain
+
+```java
+Validator ageValidator = new Validator.Builder()
+    .required()
+    .number()
+    .onlyNumbers()
+    .minValue(0)
+    .maxValue(120)
+    .build();
+```
+
+<Info>
+  All predefined rules have overloaded versions - one that accepts a custom message, and one that uses the default message.
+</Info>
+
+## Custom Rules
+
+Add custom validation logic using the `.rule()` method:
+
+```java
+Validator validator = new Validator.Builder()
+    .rule("Error message", (String value) -> {
+        // Return true if valid, false if invalid
+        return yourValidationLogic(value);
+    })
+    .build();
+```
+
+### Custom Rule Examples
+
+#### Database Uniqueness Check
+
+```java
+Validator usernameValidator = new Validator.Builder()
+    .required()
+    .minLength(3)
+    .rule("Username already exists", username -> {
+        return !database.usernameExists(username);
+    })
+    .build();
+```
+
+#### Business Logic Validation
+
+```java
+Validator promoCodeValidator = new Validator.Builder()
+    .required()
+    .onlyAlphanumeric()
+    .rule("Promo code expired", code -> {
+        return !isPromoCodeExpired(code);
+    })
+    .rule("Promo code already used", code -> {
+        return !hasUserUsedPromoCode(userId, code);
+    })
+    .build();
+```
+
+#### Complex Format Validation
+
+```java
+Validator complexValidator = new Validator.Builder()
+    .required()
+    .rule("Must start with letter", value -> {
+        return Character.isLetter(value.charAt(0));
+    })
+    .rule("Must end with number", value -> {
+        return Character.isDigit(value.charAt(value.length() - 1));
+    })
+    .build();
+```
+
+### Using Method References
+
+Java method references make code even more concise:
+
+```java
+import java.util.Objects;
+
+Validator validator = new Validator.Builder()
+    .rule("Enter a text other than null", Objects::nonNull)
+    .rule("Must be equal to 'xxx'", value -> value.equals("xxx"))
+    .build();
+```
+
+## Building Reusable Validators
+
+Define validators once and reuse them throughout your application:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class Validators {
+
+    public static final Validator email = new Validator.Builder()
+        .required()
+        .email()
+        .build();
+
+    public static final Validator phone = new Validator.Builder()
+        .required()
+        .numberPattern("(xxxx) xx-xx-xxx")
+        .build();
+    
+    public static final Validator password = new Validator.Builder()
+        .required()
+        .minLength(12)
+        .mustContainMin(3, ALPHA_LOWERCASE)
+        .mustContainMin(3, ALPHA_UPPERCASE)
+        .mustContainMin(3, NUMBER)
+        .mustContainMin(3, "@~_/")
+        .build();
+
+}
+```
+
+Then use `.copy()` to create independent instances:
+
+```java
+public class UserForm {
+    private final Validator emailValidator = Validators.email.copy();
+    private final Validator passwordValidator = Validators.password.copy();
+    
+    public UserForm() {
+        emailValidator.onInvalidEvaluation(this::handleEmailError);
+        passwordValidator.onInvalidEvaluation(this::handlePasswordError);
+    }
+}
+```
+
+<Note>
+  Use `.copy()` to create independent validators from a template. Each copy maintains its own state and event handlers.
+</Note>
+
+## Chaining with Comparison
+
+The Builder pattern also supports setting a comparison error message:
+
+```java
+Validator passwordValidator = new Validator.Builder()
+    .required()
+    .minLength(8)
+    .setNotMatchMessage("Passwords do not match")
+    .build();
+
+if (passwordValidator.isMatch(password, confirmPassword)) {
+    // Both match and pass all rules
+    savePassword(password);
+}
+```
+
+## Complete Example: Registration Form
+
+Here's a complete example showing multiple chained validators:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class RegistrationForm {
+
+    private final Validator emailValidator = new Validator.Builder()
+        .required("Email is required")
+        .email("Invalid email format")
+        .maxLength(255, "Email too long")
+        .build();
+
+    private final Validator passwordValidator = new Validator.Builder()
+        .required("Password is required")
+        .minLength(8, "Password must be at least 8 characters")
+        .mustContainMin(1, ALPHA_LOWERCASE, "At least one lowercase letter")
+        .mustContainMin(1, ALPHA_UPPERCASE, "At least one uppercase letter")
+        .mustContainMin(1, NUMBER, "At least one number")
+        .mustContainOne("@#$%", "At least one special character")
+        .setNotMatchMessage("Passwords do not match")
+        .build();
+
+    private final Validator usernameValidator = new Validator.Builder()
+        .required("Username is required")
+        .minLength(3, "Username too short")
+        .maxLength(20, "Username too long")
+        .onlyAlphanumeric("Only letters and numbers allowed")
+        .rule("Username already taken", this::isUsernameAvailable)
+        .build();
+
+    public boolean validateRegistration(String email, String username, 
+                                       String password, String confirmPassword) {
+        return emailValidator.isValid(email) &&
+               usernameValidator.isValid(username) &&
+               passwordValidator.isMatch(password, confirmPassword);
+    }
+    
+    private boolean isUsernameAvailable(String username) {
+        // Check database
+        return !database.existsUsername(username);
+    }
+
+}
+```
+
+<Info>
+  Each validator in the example chains multiple rules together, creating comprehensive validation logic in a readable, maintainable way.
+</Info>

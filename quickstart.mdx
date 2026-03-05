@@ -1,80 +1,331 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get up and running with Validator in minutes
 ---
 
-## Get started in three steps
+This guide will walk you through creating your first validator, using predefined rules, and handling validation errors. By the end, you'll have a working validator for a user registration form.
 
-Get your documentation site running locally and make your first customization.
+## Your First Validator
 
-### Step 1: Set up your local environment
+Let's start by creating a simple validator that checks if a string is not null and equals "xxx".
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+<Steps>
+  <Step title="Create a basic validator">
+    Create a new validator instance and add custom rules using lambda expressions:
 
-### Step 2: Deploy your changes
+    ```java HelloValidator.java
+    import io.github.ApamateSoft.validator.Validator;
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    public class HelloValidator {
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+      public static void main(String[] args) {
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+        // Instantiating a new validator
+        Validator validator = new Validator();
 
-### Step 3: Go live
+        // First rule: checks if string is not null
+        validator.rule("Enter a text other than null", (String evaluate) -> {
+          return evaluate != null;
+        });
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+        // Second rule: checks if string equals "xxx"
+        validator.rule("The text is different from 'xxx'", (String evaluate) -> {
+          return evaluate.equals("xxx");
+        });
 
-## Next steps
+        // Test the validator
+        System.out.println(validator.isValid("xxx"));  // true
+        System.out.println(validator.isValid("abc"));  // false
+      }
 
-Now that you have your docs running, explore these key features:
+    }
+    ```
+
+    <Note>
+      - Rules are evaluated in the order they were added
+      - When a rule fails, the remaining rules are ignored
+      - A string is valid only if it passes all rules
+    </Note>
+  </Step>
+
+  <Step title="Use the Builder pattern">
+    Simplify your code with the fluent Builder API:
+
+    ```java
+    import io.github.ApamateSoft.validator.Validator;
+    import java.util.Objects;
+
+    public class HelloValidator {
+
+      Validator validator = new Validator.Builder()
+              .rule("Enter a text other than null", Objects::nonNull)
+              .rule("The text is different from 'xxx'", evaluate -> evaluate.equals("xxx"))
+              .build();
+
+    }
+    ```
+
+    The Builder pattern provides a cleaner, more readable syntax for chaining rules.
+  </Step>
+</Steps>
+
+## Using Predefined Rules
+
+Validator comes with 27+ predefined rules for common validation scenarios. Let's explore some of the most useful ones.
+
+### Email Validation
+
+```java EmailValidator.java
+import io.github.ApamateSoft.validator.Validator;
+
+Validator emailValidator = new Validator.Builder()
+        .required()
+        .email()
+        .maxLength(255)
+        .build();
+
+// Test it
+emailValidator.isValid("user@example.com");  // true
+emailValidator.isValid("invalid-email");     // false
+emailValidator.isValid("");                  // false
+```
+
+### Number Validation
+
+```java AgeValidator.java
+import io.github.ApamateSoft.validator.Validator;
+
+Validator ageValidator = new Validator.Builder()
+        .required()
+        .onlyNumbers()
+        .minValue(18)
+        .maxValue(120)
+        .build();
+
+// Test it
+ageValidator.isValid("25");   // true
+ageValidator.isValid("17");   // false (too young)
+ageValidator.isValid("abc");  // false (not a number)
+```
+
+### Phone Number Pattern
+
+```java PhoneValidator.java
+import io.github.ApamateSoft.validator.Validator;
+
+Validator phoneValidator = new Validator.Builder()
+        .required()
+        .numberPattern("(xxxx) xxx-xxxx")
+        .build();
+
+// Test it
+phoneValidator.isValid("(1234) 567-8901");  // true
+phoneValidator.isValid("123-456-7890");     // false (wrong format)
+```
+
+<Info>
+  The `x` character in `numberPattern` is a placeholder for digits. Any other characters must match exactly.
+</Info>
+
+### Password Strength
+
+```java PasswordValidator.java
+import io.github.ApamateSoft.validator.Validator;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+Validator passwordValidator = new Validator.Builder()
+        .required()
+        .minLength(8)
+        .mustContainMin(1, ALPHA_LOWERCASE)
+        .mustContainMin(1, ALPHA_UPPERCASE)
+        .mustContainMin(1, NUMBER)
+        .mustContainMin(1, "@#$%^&*")
+        .build();
+
+// Test it
+passwordValidator.isValid("Password123!");  // true
+passwordValidator.isValid("password");      // false (no uppercase, no number)
+passwordValidator.isValid("Pass1!");        // false (too short)
+```
+
+## Handling Validation Errors
+
+Validator provides two approaches for handling validation errors: event-based and exception-based.
+
+### Event-Based Error Handling
+
+Use `onInvalidEvaluation` to register a callback that receives error messages:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+
+Validator validator = new Validator.Builder()
+        .required()
+        .email()
+        .build();
+
+// Register error handler
+validator.onInvalidEvaluation(message -> {
+    System.out.println("Validation failed: " + message);
+});
+
+// Validate
+if (!validator.isValid("invalid-email")) {
+    // Error handler was called with the message
+}
+```
+
+### Exception-Based Error Handling
+
+Use `validOrFail` to throw an exception when validation fails:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+Validator validator = new Validator.Builder()
+        .required()
+        .email()
+        .build();
+
+try {
+    validator.validOrFail("email", "invalid-email");
+    // Validation passed, continue processing
+} catch (InvalidEvaluationException e) {
+    System.out.println("Field: " + e.getKey());      // "email"
+    System.out.println("Value: " + e.getValue());    // "invalid-email"
+    System.out.println("Error: " + e.getMessage());  // "Email invalid"
+}
+```
+
+## Comparing Strings
+
+For password confirmation or matching fields, use `isMatch` or `compareOrFail`:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+
+Validator passwordValidator = new Validator.Builder()
+        .required()
+        .minLength(8)
+        .setNotMatchMessage("Passwords do not match")
+        .build();
+
+// Event-based
+if (passwordValidator.isMatch("password123", "password123")) {
+    System.out.println("Passwords match!");
+}
+
+// Exception-based
+try {
+    passwordValidator.compareOrFail("password", "password123", "password123");
+    // Passwords match
+} catch (InvalidEvaluationException e) {
+    System.out.println("Error: " + e.getMessage());
+}
+```
+
+## Complete Example: User Registration
+
+Here's a complete example that validates a user registration form:
+
+```java UserRegistration.java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class UserRegistration {
+
+    // Define reusable validators
+    private static final Validator emailValidator = new Validator.Builder()
+            .required()
+            .email()
+            .maxLength(255)
+            .build();
+
+    private static final Validator usernameValidator = new Validator.Builder()
+            .required()
+            .minLength(3)
+            .maxLength(20)
+            .onlyAlphanumeric()
+            .build();
+
+    private static final Validator passwordValidator = new Validator.Builder()
+            .required()
+            .minLength(8)
+            .mustContainMin(1, ALPHA_LOWERCASE)
+            .mustContainMin(1, ALPHA_UPPERCASE)
+            .mustContainMin(1, NUMBER)
+            .mustContainMin(1, "@#$%^&*")
+            .build();
+
+    public static void registerUser(String email, String username, 
+                                   String password, String confirmPassword) {
+        try {
+            // Validate each field
+            emailValidator.validOrFail("email", email);
+            usernameValidator.validOrFail("username", username);
+            passwordValidator.validOrFail("password", password);
+            passwordValidator.compareOrFail("password", password, confirmPassword);
+
+            // All validations passed - proceed with registration
+            System.out.println("Registration successful!");
+            System.out.println("Email: " + email);
+            System.out.println("Username: " + username);
+
+        } catch (InvalidEvaluationException e) {
+            // Handle validation error
+            System.err.println("Validation failed for " + e.getKey() + ": " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        // Test with valid data
+        registerUser(
+            "user@example.com",
+            "johndoe",
+            "SecurePass123!",
+            "SecurePass123!"
+        );
+
+        System.out.println();
+
+        // Test with invalid data
+        registerUser(
+            "invalid-email",
+            "ab",
+            "weak",
+            "weak"
+        );
+    }
+
+}
+```
+
+**Output:**
+```
+Registration successful!
+Email: user@example.com
+Username: johndoe
+
+Validation failed for email: Email invalid
+```
+
+## Next Steps
+
+Now that you understand the basics, explore these topics:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Core Concepts" icon="book" href="/core-concepts/validation-approaches">
+    Learn about different validation approaches and patterns
+  </Card>
+  <Card title="Validation Rules" icon="list-check" href="/api/rules/string-rules">
+    Explore all 27+ predefined validation rules
+  </Card>
+  <Card title="Annotations" icon="at" href="/api/annotations/overview">
+    Use annotations for declarative validation
+  </Card>
+  <Card title="Form Validation" icon="wpforms" href="/guides/form-validation">
+    Build complete form validation systems
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

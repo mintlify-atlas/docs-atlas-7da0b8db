@@ -1,0 +1,286 @@
+---
+title: Form Validation
+description: Learn how to validate complete forms with multiple fields using the Validator library
+---
+
+## Overview
+
+The Validator library makes it easy to validate multiple form fields with different validation rules. This guide demonstrates how to create a complete registration form with proper validation handling.
+
+## Complete Registration Form Example
+
+Here's a real-world example of validating a registration form with email, phone, and password fields.
+
+### Defining Reusable Validators
+
+First, create a central place to define your validators:
+
+```java Validators.java
+import io.github.ApamateSoft.validator.Validator;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class Validators {
+
+    public static final Validator email = new Validator.Builder()
+        .required()
+        .email()
+        .build();
+
+    public static final Validator phone = new Validator.Builder()
+        .required()
+        .numberPattern("(xxxx) xx-xx-xxx")
+        .build();
+    
+    public static final Validator password = new Validator.Builder()
+        .required()
+        .minLength(12)
+        .mustContainMin(3, ALPHA_LOWERCASE)
+        .mustContainMin(3, ALPHA_UPPERCASE)
+        .mustContainMin(3, NUMBER)
+        .mustContainMin(3, "@~_/")
+        .build();
+
+}
+```
+
+### Using Events for Validation
+
+<Steps>
+  <Step title="Create validator instances">
+    Copy the predefined validators for each field:
+
+    ```java
+    private final Validator emailValidator = Validators.email.copy();
+    private final Validator pswValidator = Validators.password.copy();
+    private final Validator phoneValidator = Validators.phone.copy();
+    ```
+  </Step>
+
+  <Step title="Set up error handlers">
+    Configure the `onInvalidEvaluation` event for each validator:
+
+    ```java
+    public Register() {
+        emailValidator.onInvalidEvaluation(message -> {
+            // Display error message in email field UI
+            System.err.println("Email error: " + message);
+        });
+        pswValidator.onInvalidEvaluation(message -> {
+            // Display error message in password field UI
+            System.err.println("Password error: " + message);
+        });
+        phoneValidator.onInvalidEvaluation(message -> {
+            // Display error message in phone field UI
+            System.err.println("Phone error: " + message);
+        });
+    }
+    ```
+  </Step>
+
+  <Step title="Validate on submit">
+    Check all fields before submitting:
+
+    ```java
+    public void submit() {
+        if (
+            !emailValidator.isValid(email) ||
+            !pswValidator.isMatch(psw, pswConfirmation) ||
+            !phoneValidator.isValid(phone)
+        ) return;
+        
+        // All validations passed - proceed with registration
+        createAccount(email, phone, psw);
+    }
+    ```
+  </Step>
+</Steps>
+
+### Complete Event-Based Example
+
+```java Register.java
+import io.github.ApamateSoft.validator.Validator;
+
+public class Register {
+
+    private final Validator emailValidator = Validators.email.copy();
+    private final Validator pswValidator = Validators.password.copy();
+    private final Validator phoneValidator = Validators.phone.copy();
+
+    private String email = "";
+    private String phone = "";
+    private String psw = "";
+    private String pswConfirmation = "";
+
+    public Register() {
+        emailValidator.onInvalidEvaluation(message -> {
+            // TODO: handle error for email
+        });
+        pswValidator.onInvalidEvaluation(message -> {
+            // TODO: handle error for password
+        });
+        phoneValidator.onInvalidEvaluation(message -> {
+            // TODO: handle error for phone
+        });
+    }
+
+    public void submit() {
+        if (
+            !emailValidator.isValid(email) ||
+            !pswValidator.isMatch(psw, pswConfirmation) ||
+            !phoneValidator.isValid(phone)
+        ) return;
+        // TODO proceed with submit
+    }
+
+}
+```
+
+## Exception-Based Validation
+
+If you prefer exception handling over events, use the `validOrFail` and `compareOrFail` methods:
+
+```java Register.java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+public class Register {
+
+    private final Validator emailValidator = Validators.email.copy();
+    private final Validator pswValidator = Validators.password.copy();
+    private final Validator phoneValidator = Validators.phone.copy();
+
+    private String email = "";
+    private String phone = "";
+    private String psw = "";
+    private String pswConfirmation = "";
+
+    public void submit() {
+        try {
+            emailValidator.validOrFail("email", email);
+            pswValidator.compareOrFail("psw", psw, pswConfirmation);
+            phoneValidator.validOrFail("phone", phone);
+            // TODO proceed with submit
+        } catch (InvalidEvaluationException e) {
+            switch (e.getKey()) {
+                case "email":
+                    // TODO: handle error for email
+                    break;
+                case "psw":
+                    // TODO: handle error for password
+                    break;
+                case "phone":
+                    // TODO: handle error for phone
+                    break;
+            }
+        }
+    }
+
+}
+```
+
+<Note>
+  The `key` parameter in `validOrFail()` and `compareOrFail()` helps you identify which field failed validation in the catch block.
+</Note>
+
+## Annotation-Based Validation
+
+For a more declarative approach, use annotations directly on your data model:
+
+### Create a POJO with Annotations
+
+```java RegisterPojo.java
+import io.github.ApamateSoft.validator.annotations.*;
+import static io.github.ApamateSoft.validator.utils.Alphabets.*;
+
+public class RegisterPojo {
+
+    @Required
+    @Email
+    private String email = "";
+
+    @Required
+    @NumberPattern(patter = "(xxxx) xx-xx-xxx")
+    private String phone = "";
+
+    @Required
+    @MinLength(min = 12)
+    @MustContainMin(min = 3, alphabet = ALPHA_LOWERCASE)
+    @MustContainMin(min = 3, alphabet = ALPHA_UPPERCASE)
+    @MustContainMin(min = 3, alphabet = NUMBER)
+    @MustContainMin(min = 3, alphabet = "@~_/")
+    @Compare(compareWith = "pswConfirmation")
+    private String psw = "";
+
+    private String pswConfirmation = "";
+
+    // Constructor, getters, and setters...
+}
+```
+
+### Validate the POJO
+
+```java Register.java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+public class Register {
+
+    private RegisterPojo register = new RegisterPojo("", "", "", "");
+
+    public void submit() {
+        try {
+            Validator.validOrFail(register);
+            // TODO proceed with submit
+        } catch (InvalidEvaluationException e) {
+            switch (e.getKey()) {
+                case "email":
+                    // TODO: handle error for email
+                    break;
+                case "psw":
+                    // TODO: handle error for password
+                    break;
+                case "phone":
+                    // TODO: handle error for phone
+                    break;
+            }
+        }
+    }
+
+}
+```
+
+<Warning>
+  Annotations only work with String fields. The `Validator.validOrFail(Object)` method inspects the object's String fields and applies the validation rules defined by the annotations.
+</Warning>
+
+## Validation Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use .copy() for reusable validators" icon="copy">
+    Always use `.copy()` when reusing validators to ensure each instance maintains its own state.
+  </Card>
+  
+  <Card title="Define validators centrally" icon="layer-group">
+    Create a `Validators` class to define all your validation rules in one place for consistency.
+  </Card>
+  
+  <Card title="Validate early" icon="shield-check">
+    Validate fields as the user types (on blur) to provide immediate feedback.
+  </Card>
+  
+  <Card title="Provide clear error messages" icon="message">
+    Customize error messages to be user-friendly and actionable.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Password Validation" icon="key" href="/guides/password-validation">
+    Learn advanced password validation techniques
+  </Card>
+  
+  <Card title="Error Handling" icon="triangle-exclamation" href="/guides/error-handling">
+    Master both event-based and exception-based error handling
+  </Card>
+</CardGroup>

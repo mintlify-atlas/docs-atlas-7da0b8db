@@ -1,0 +1,301 @@
+---
+title: "Alphabets"
+description: "Predefined character sets for validation rules"
+---
+
+The `Alphabets` class provides a set of predefined character strings that can be used with validation rules like `shouldOnlyContain`, `notContain`, and `mustContainOne`. These constants make it easy to validate that input contains only specific types of characters.
+
+## Import
+
+```java
+import io.github.ApamateSoft.validator.utils.Alphabets;
+```
+
+## Available Alphabets
+
+### Numeric Systems
+
+#### BIN
+Binary digits (base-2)
+```java
+Alphabets.BIN = "01"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.BIN, "Must contain only binary digits");
+
+validator.verify("binary", "101010"); // Valid
+validator.verify("binary", "102");    // Invalid - contains '2'
+```
+
+#### OCT
+Octal digits (base-8)
+```java
+Alphabets.OCT = "01234567"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.OCT, "Must contain only octal digits");
+
+validator.verify("octal", "755");  // Valid
+validator.verify("octal", "789");  // Invalid - contains '8' and '9'
+```
+
+#### HEX
+Hexadecimal digits (base-16)
+```java
+Alphabets.HEX = "0123456789aAbBcCdDeEfF"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.HEX, "Must contain only hexadecimal digits");
+
+validator.verify("hex", "1a2B3c");  // Valid
+validator.verify("hex", "GGFF00");  // Invalid - contains 'G'
+```
+
+### English Alphabets
+
+#### NUMBER
+Numeric digits (0-9)
+```java
+Alphabets.NUMBER = "0123456789"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.NUMBER, "Must contain only numbers");
+
+validator.verify("zip", "12345");     // Valid
+validator.verify("zip", "12-345");    // Invalid - contains '-'
+```
+
+#### ALPHABET
+English letters (mixed case)
+```java
+Alphabets.ALPHABET = "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.ALPHABET, "Must contain only letters");
+
+validator.verify("name", "JohnDoe");   // Valid
+validator.verify("name", "John123");   // Invalid - contains numbers
+```
+
+#### ALPHA_LOWERCASE
+Lowercase English letters
+```java
+Alphabets.ALPHA_LOWERCASE = "abcdefghijklmnopqrstuvwxyz"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.ALPHA_LOWERCASE, "Must contain only lowercase letters");
+
+validator.verify("username", "johndoe");  // Valid
+validator.verify("username", "JohnDoe");  // Invalid - contains uppercase
+```
+
+#### ALPHA_UPPERCASE
+Uppercase English letters
+```java
+Alphabets.ALPHA_UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.ALPHA_UPPERCASE, "Must contain only uppercase letters");
+
+validator.verify("code", "ABCD");    // Valid
+validator.verify("code", "AbCd");    // Invalid - contains lowercase
+```
+
+#### ALPHA_NUMERIC
+English letters and numbers
+```java
+Alphabets.ALPHA_NUMERIC = "0123456789aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.ALPHA_NUMERIC, "Must contain only letters and numbers");
+
+validator.verify("username", "User123");    // Valid
+validator.verify("username", "User_123");   // Invalid - contains '_'
+```
+
+### Spanish Alphabets
+
+These alphabets include Spanish-specific characters like ñ, á, é, í, ó, ú.
+
+#### ALPHABET_ES
+Spanish letters (mixed case) with accents
+```java
+Alphabets.ALPHABET_ES = "aAáÁbBcCdDeEéÉfFgGhHiIíÍjJkKlLmMnNñÑoOóÓpPqQrRsStTuUúÚvVwWxXyYzZ"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.ALPHABET_ES, "Must contain only Spanish letters");
+
+validator.verify("nombre", "José");        // Valid
+validator.verify("nombre", "Peña");        // Valid
+validator.verify("nombre", "José123");     // Invalid - contains numbers
+```
+
+#### ALPHA_LOWERCASE_ES
+Lowercase Spanish letters with accents
+```java
+Alphabets.ALPHA_LOWERCASE_ES = "aábcdeéfghiíjklmnñoópqrstuúvwxyz"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.ALPHA_LOWERCASE_ES, "Must contain only lowercase Spanish letters");
+
+validator.verify("nombre", "josé");    // Valid
+validator.verify("nombre", "José");    // Invalid - contains uppercase
+```
+
+#### ALPHA_UPPERCASE_ES
+Uppercase Spanish letters with accents
+```java
+Alphabets.ALPHA_UPPERCASE_ES = "AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZ"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.ALPHA_UPPERCASE_ES, "Must contain only uppercase Spanish letters");
+
+validator.verify("code", "JOSÉ");    // Valid
+validator.verify("code", "José");    // Invalid - contains lowercase
+```
+
+#### ALPHA_NUMERIC_ES
+Spanish letters (with accents) and numbers
+```java
+Alphabets.ALPHA_NUMERIC_ES = "0123456789aAáÁbBcCdDeEéÉfFgGhHiIíÍjJkKlLmMnNñÑoOóÓpPqQrRsStTuUúÚvVwWxXyYzZ"
+```
+
+**Example:**
+```java
+Validator validator = new Validator()
+    .shouldOnlyContain(Alphabets.ALPHA_NUMERIC_ES, "Must contain only Spanish letters and numbers");
+
+validator.verify("codigo", "Código123");   // Valid
+validator.verify("codigo", "Code-123");    // Invalid - contains '-'
+```
+
+## Usage with Validation Rules
+
+Alphabets are most commonly used with these validation rules:
+
+### shouldOnlyContain
+Validate that input contains only characters from the alphabet:
+```java
+Validator passwordValidator = new Validator()
+    .shouldOnlyContain(Alphabets.ALPHA_NUMERIC + "_-", "Password must contain only letters, numbers, hyphens, and underscores");
+```
+
+### notContain
+Validate that input does not contain any characters from the alphabet:
+```java
+Validator usernameValidator = new Validator()
+    .notContain("!@#$%^&*()", "Username cannot contain special characters");
+```
+
+### mustContainOne
+Validate that input contains at least one character from the alphabet:
+```java
+Validator passwordValidator = new Validator()
+    .mustContainOne(Alphabets.NUMBER, "Password must contain at least one number")
+    .mustContainOne(Alphabets.ALPHA_UPPERCASE, "Password must contain at least one uppercase letter");
+```
+
+### mustContainMin
+Validate that input contains a minimum number of characters from the alphabet:
+```java
+Validator passwordValidator = new Validator()
+    .mustContainMin(2, Alphabets.NUMBER, "Password must contain at least 2 numbers");
+```
+
+## Custom Alphabets
+
+You can also create your own custom alphabets for specific validation needs:
+
+```java
+// Custom alphabet for vowels only
+String vowels = "aeiouAEIOU";
+Validator validator = new Validator()
+    .shouldOnlyContain(vowels, "Must contain only vowels");
+
+// Custom alphabet for common safe URL characters
+String urlSafe = Alphabets.ALPHA_NUMERIC + "-._~";
+Validator urlValidator = new Validator()
+    .shouldOnlyContain(urlSafe, "Must be URL-safe");
+
+// Custom alphabet combining multiple predefined sets
+String passwordChars = Alphabets.ALPHA_NUMERIC + "!@#$%^&*()";
+Validator passwordValidator = new Validator()
+    .shouldOnlyContain(passwordChars, "Password contains invalid characters");
+```
+
+## Use Cases
+
+### Password Validation
+```java
+Validator passwordValidator = new Validator()
+    .required("Password is required")
+    .minLength(8, "Password must be at least 8 characters")
+    .mustContainOne(Alphabets.ALPHA_LOWERCASE, "Must contain a lowercase letter")
+    .mustContainOne(Alphabets.ALPHA_UPPERCASE, "Must contain an uppercase letter")
+    .mustContainOne(Alphabets.NUMBER, "Must contain a number")
+    .mustContainOne("!@#$%^&*()", "Must contain a special character");
+```
+
+### Username Validation
+```java
+Validator usernameValidator = new Validator()
+    .required("Username is required")
+    .rangeLength(3, 20, "Username must be 3-20 characters")
+    .shouldOnlyContain(Alphabets.ALPHA_NUMERIC + "_", "Username can only contain letters, numbers, and underscores")
+    .notContain(Alphabets.ALPHA_UPPERCASE, "Username must be lowercase");
+```
+
+### Color Hex Code Validation
+```java
+Validator hexColorValidator = new Validator()
+    .required("Color code is required")
+    .length(6, "Color code must be exactly 6 characters")
+    .shouldOnlyContain(Alphabets.HEX, "Must be a valid hexadecimal color code");
+```
+
+### Spanish Name Validation
+```java
+Validator nombreValidator = new Validator()
+    .required("Nombre es requerido")
+    .shouldOnlyContain(Alphabets.ALPHABET_ES + " ", "El nombre solo puede contener letras españolas y espacios");
+```
+
+## Related
+
+- [Validators](/api/utilities/validators) - Static validation methods
+- [Regular Expressions](/api/utilities/regular-expressions) - Predefined regex patterns
+- [String Rules](/api/rules/string-rules) - String validation rules
+- [Validator](/api/validator) - Main validation class

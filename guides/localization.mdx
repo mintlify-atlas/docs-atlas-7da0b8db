@@ -1,0 +1,342 @@
+---
+title: Localization
+description: Customize validation messages and support multiple languages
+---
+
+## Overview
+
+The Validator library supports internationalization (i18n) through the `Messages` interface. You can switch between built-in languages (English and Spanish) or create custom message implementations for any language.
+
+## Built-in Languages
+
+The library includes two built-in message implementations:
+
+- **MessagesEn** - English messages (default)
+- **MessagesEs** - Spanish messages
+
+## Changing the Default Language
+
+Use the static `Validator.setMessages()` method to change the language globally:
+
+### Switch to Spanish
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.messages.MessagesEs;
+
+public class Application {
+
+    public static void main(String[] args) {
+        // Set Spanish as the default language
+        Validator.setMessages(new MessagesEs());
+        
+        // All validators created after this will use Spanish messages
+        Validator validator = new Validator.Builder()
+            .required()  // "Requerido"
+            .email()     // "Correo electrónico inválido"
+            .build();
+    }
+
+}
+```
+
+### Switch to English
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.messages.MessagesEn;
+
+public class Application {
+
+    public static void main(String[] args) {
+        // Explicitly set English (already the default)
+        Validator.setMessages(new MessagesEn());
+    }
+
+}
+```
+
+<Note>
+  The `setMessages()` method affects all validators in your application. Call it early in your application's initialization, typically in the `main()` method or application startup.
+</Note>
+
+## Message Translations Reference
+
+Here are some commonly used validation messages in both languages:
+
+| Rule | English (MessagesEn) | Spanish (MessagesEs) |
+|------|---------------------|---------------------|
+| `required` | Required | Requerido |
+| `email` | Email invalid | Correo electrónico inválido |
+| `minLength` | %d or more characters are required | Se requiere %d o más caracteres |
+| `maxLength` | %d or less characters required | Se requiere %d o menos caracteres |
+| `compare` | Not match | No coinciden |
+| `number` | It is not a number | No es un número |
+| `onlyNumbers` | Only numbers | Solo números |
+| `onlyLetters` | Only letters | Solo letras |
+| `name` | Invalid personal name | Nombre personal inválido |
+
+<Accordion title="View all message translations">
+  | Rule | English | Spanish |
+  |------|---------|--------|
+  | `compare` | Not match | No coinciden |
+  | `date` | The date does not match the format %s | La fecha no coincide con el formato %s |
+  | `email` | Email invalid | Correo electrónico inválido |
+  | `expirationDate` | Expired date | Fecha expirada |
+  | `httpLink` | Invalid http link | Enlace http inválido |
+  | `httpsLink` | Invalid https link | Enlace https inválido |
+  | `ip` | Invalid IP | IP inválida |
+  | `ipv4` | Invalid IPv4 | IPv4 inválida |
+  | `ipv6` | Invalid IPv6 | IPv6 inválida |
+  | `length` | It requires %d characters | Se requiere %d caracteres |
+  | `link` | Invalid link | Enlace inválido |
+  | `maxLength` | %d or less characters required | Se requiere %d o menos caracteres |
+  | `maxValue` | The value cannot be greater than %1$.2f | El valor no puede ser mayor a %1$.2f |
+  | `minAge` | You must be at least %d years old | Se debe tener al menos %d años |
+  | `minLength` | %d or more characters are required | Se requiere %d o más caracteres |
+  | `minValue` | The value cannot be less than %1$.2f | El valor no puede ser menor a %1$.2f |
+  | `mustContainMin` | At least %d of the following characters are required: %s | Se requiere al menos %d de los siguientes caracteres: %s |
+  | `mustContainOne` | At least one of the following characters is required: %s | Se requiere al menos uno de los siguientes caracteres: %s |
+  | `name` | Invalid personal name | Nombre personal inválido |
+  | `notContain` | The following characters aren't admitted %s | No se admiten los siguientes caracteres %s |
+  | `number` | It is not a number | No es un número |
+  | `numberPattern` | Does not match pattern %s | No coincide con el patrón %s |
+  | `onlyAlphanumeric` | Just alphanumeric characters | Solo caracteres alfanuméricos |
+  | `onlyLetters` | Only letters | Solo letras |
+  | `onlyNumbers` | Only numbers | Solo números |
+  | `rangeLength` | The text must contain between %d to %d characters | El texto debe contener entre %d a %d caracteres |
+  | `rangeValue` | The value must be between %1$.2f and %1$.2f | El valor debe estar entre %1$.2f y %1$.2f |
+  | `regExp` | The value does not match the regular expression %s | El valor no coincide con la expresión regular %s |
+  | `required` | Required | Requerido |
+  | `shouldOnlyContain` | They are just admitted the following characters %s | Solo se admiten los siguientes caracteres %s |
+  | `time` | Time invalid | Hora inválida |
+  | `time12` | Invalid 12 hour format | Formato 12 horas inválido |
+  | `time24` | Invalid 24 hour format | Formato 24 horas inválido |
+  | `wwwLink` | Invalid www link | Enlace www inválido |
+</Accordion>
+
+## Creating Custom Messages
+
+You can create custom message implementations for any language or to customize specific messages.
+
+### Implementing the Messages Interface
+
+<Steps>
+  <Step title="Create a class implementing Messages">
+    ```java MessagesFr.java
+    package com.myapp.validation;
+
+    import io.github.ApamateSoft.validator.messages.Messages;
+
+    public class MessagesFr implements Messages {
+        
+        @Override
+        public String getRequiredMessage() {
+            return "Obligatoire";
+        }
+        
+        @Override
+        public String getEmailMessage() {
+            return "Email invalide";
+        }
+        
+        @Override
+        public String getMinLengthMessage() {
+            return "%d caractères ou plus sont requis";
+        }
+        
+        // Implement all other methods from the Messages interface...
+    }
+    ```
+  </Step>
+
+  <Step title="Apply your custom messages">
+    ```java
+    import com.myapp.validation.MessagesFr;
+    import io.github.ApamateSoft.validator.Validator;
+
+    public class Application {
+        public static void main(String[] args) {
+            Validator.setMessages(new MessagesFr());
+        }
+    }
+    ```
+  </Step>
+</Steps>
+
+### Messages Interface Reference
+
+The `Messages` interface defines methods for all validation rules. Each method returns a String message:
+
+```java
+public interface Messages {
+    String getCompareMessage();
+    String getDateMessage();
+    String getEmailMessage();
+    String getExpirationDateMessage();
+    String getHttpLinkMessage();
+    String getHttpsLinkMessage();
+    String getIpMessage();
+    String getIpv4Message();
+    String getIpv6Message();
+    String getLengthMessage();
+    String getLinkMessage();
+    String getMaxLengthMessage();
+    String getMaxValueMessage();
+    String getMinAgeMessage();
+    String getMinLengthMessage();
+    String getMinValueMessage();
+    String getMustContainMinMessage();
+    String getMustContainOneMessage();
+    String getNameMessage();
+    String getNotContainMessage();
+    String getNumberMessage();
+    String getNumberPatternMessage();
+    String getOnlyAlphanumericMessage();
+    String getOnlyLettersMessage();
+    String getOnlyNumbersMessage();
+    String getRangeLengthMessage();
+    String getRangeValueMessage();
+    String getRegExpMessage();
+    String getRequiredMessage();
+    String getShouldOnlyContainMessage();
+    String getTimeMessage();
+    String getTime12Message();
+    String getTime24Message();
+    String getWwwLinkMessage();
+}
+```
+
+<Tip>
+  Many message methods return format strings with placeholders like `%d` or `%s`. These are replaced with actual values when the validator creates error messages. For example, `getMinLengthMessage()` returns `"%d or more characters are required"`, and the validator replaces `%d` with the actual minimum length.
+</Tip>
+
+## Per-Validator Custom Messages
+
+You can override default messages for individual validators without changing the global language:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+
+Validator customValidator = new Validator.Builder()
+    .required("This field cannot be empty")  // Custom message
+    .minLength(8, "Please enter at least 8 characters")  // Custom message
+    .email("Please provide a valid email address")  // Custom message
+    .build();
+```
+
+This approach is useful when you want:
+- More specific error messages for certain fields
+- To mix languages in the same application
+- User-friendly messages that differ from the default
+
+## Custom Messages with Annotations
+
+Annotations also support custom messages:
+
+```java
+import io.github.ApamateSoft.validator.annotations.*;
+
+public class User {
+
+    @Required(message = "Le nom d'utilisateur est obligatoire")
+    @MinLength(min = 3, message = "Au moins 3 caractères requis")
+    private String username;
+    
+    @Required(message = "L'email est obligatoire")
+    @Email(message = "Format d'email invalide")
+    private String email;
+
+}
+```
+
+## Runtime Language Switching
+
+You can change languages at runtime based on user preferences:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.messages.MessagesEn;
+import io.github.ApamateSoft.validator.messages.MessagesEs;
+
+public class LanguageManager {
+    
+    public void setLanguage(String languageCode) {
+        switch (languageCode) {
+            case "es":
+                Validator.setMessages(new MessagesEs());
+                break;
+            case "en":
+            default:
+                Validator.setMessages(new MessagesEn());
+                break;
+        }
+    }
+    
+}
+```
+
+<Warning>
+  Changing messages at runtime affects all **new** validators created after the change. Existing validator instances will continue using the messages they were created with. If you need to update existing validators, create new instances after changing the messages.
+</Warning>
+
+## Extending Built-in Messages
+
+You can extend existing message classes to customize only specific messages:
+
+```java
+import io.github.ApamateSoft.validator.messages.MessagesEn;
+
+public class CustomMessagesEn extends MessagesEn {
+    
+    @Override
+    public String getRequiredMessage() {
+        return "This field is required. Please provide a value.";
+    }
+    
+    @Override
+    public String getEmailMessage() {
+        return "Please enter a valid email address (e.g., user@example.com).";
+    }
+    
+    // All other messages inherit from MessagesEn
+}
+```
+
+Then use your custom implementation:
+
+```java
+Validator.setMessages(new CustomMessagesEn());
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Set language early" icon="clock">
+    Call `Validator.setMessages()` during application initialization before creating any validators.
+  </Card>
+  
+  <Card title="Use custom messages for clarity" icon="message">
+    Override default messages when you need more specific, user-friendly error text.
+  </Card>
+  
+  <Card title="Extend, don't replace" icon="puzzle-piece">
+    Extend existing message classes to customize only what you need.
+  </Card>
+  
+  <Card title="Test in all languages" icon="globe">
+    Ensure your validation logic works correctly with all supported languages.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/guides/error-handling">
+    Learn how to handle validation errors effectively
+  </Card>
+  
+  <Card title="Form Validation" icon="list-check" href="/guides/form-validation">
+    Apply localization to complete form validation
+  </Card>
+</CardGroup>

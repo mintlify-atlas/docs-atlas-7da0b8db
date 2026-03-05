@@ -1,0 +1,498 @@
+---
+title: Numeric Rules
+description: Validation rules for numeric formats and value ranges
+---
+
+## Overview
+
+Numeric rules validate that String values represent valid numbers and fall within specified ranges. These rules are essential for validating numeric inputs like prices, ages, quantities, and other numerical data.
+
+## Format Validation
+
+### number
+
+Validates that the String is in a valid numeric format.
+
+```java
+public void number(String message)
+public void number()
+```
+
+<ParamField path="message" type="String">
+  Custom error message (optional - uses default if not provided)
+</ParamField>
+
+**Accepts:**
+- Integers: `"123"`
+- Decimal numbers: `"123.45"`
+- Negative values: `"-123"`, `"-123.45"`
+
+**Example:**
+
+```java
+Validator validator = new Validator();
+validator.number();
+validator.number("Please enter a valid number");
+
+validator.isValid("123");      // true
+validator.isValid("123.45");   // true
+validator.isValid("-123");     // true
+validator.isValid("-123.45");  // true
+validator.isValid("abc");      // false
+validator.isValid("12.34.56"); // false
+```
+
+**Builder Usage:**
+
+```java
+Validator validator = new Validator.Builder()
+    .number("Invalid number format")
+    .build();
+```
+
+**Annotation Usage:**
+
+```java
+public class Product {
+    @Number
+    private String price;
+    
+    @Number(message = "Quantity must be a number")
+    private String quantity;
+}
+```
+
+---
+
+### numberPattern
+
+Validates that the String matches a specific pattern, where 'x' characters can be replaced with numbers.
+
+```java
+public void numberPattern(String pattern, String message)
+public void numberPattern(String pattern)
+```
+
+<ParamField path="pattern" type="String" required>
+  Pattern string where 'x' represents positions that can contain numbers or 'x' itself
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for pattern)
+</ParamField>
+
+**How It Works:**
+- Each 'x' in the pattern can be matched by a digit (0-9) OR the letter 'x'
+- All other characters must match exactly
+- Useful for phone numbers, credit cards, formatted IDs, etc.
+
+**Example:**
+
+```java
+// Phone number pattern
+validator.numberPattern("+xx (xxx) xxx-xx-xx");
+validator.numberPattern("+1 (xxx) xxx-xxxx", "Invalid US phone number format");
+
+// Valid matches for pattern "+xx (xxx) xxx-xx-xx"
+validator.isValid("+12 (345) 678-90-12");  // true (all digits)
+validator.isValid("+xx (345) 678-90-12");  // true (x's in first two)
+validator.isValid("+xx (xxx) xxx-xx-xx");  // true (all x's)
+validator.isValid("+12 (3x5) 678-90-12");  // true (mixed)
+
+// Invalid
+validator.isValid("+12 (345) 678-9012");   // false (wrong format)
+validator.isValid("+12 345 678-90-12");    // false (missing parens)
+```
+
+**Common Patterns:**
+
+```java
+// US Phone: +1 (xxx) xxx-xxxx
+validator.numberPattern("+1 (xxx) xxx-xxxx");
+
+// Credit Card: xxxx-xxxx-xxxx-xxxx
+validator.numberPattern("xxxx-xxxx-xxxx-xxxx");
+
+// SSN: xxx-xx-xxxx
+validator.numberPattern("xxx-xx-xxxx");
+
+// Date: xx/xx/xxxx
+validator.numberPattern("xx/xx/xxxx");
+```
+
+**Annotation Usage:**
+
+```java
+public class Contact {
+    @NumberPattern(patter = "+1 (xxx) xxx-xxxx")
+    private String phoneNumber;
+    
+    @NumberPattern(
+        patter = "xxx-xx-xxxx",
+        message = "SSN must be in format xxx-xx-xxxx"
+    )
+    private String ssn;
+}
+```
+
+**Note:** The annotation parameter is spelled `patter` (not `pattern`) in the source code.
+
+## Value Range Validation
+
+### minValue
+
+Validates that the numeric value of the String is not less than the minimum.
+
+```java
+public void minValue(double min, String message)
+public void minValue(double min)
+```
+
+<ParamField path="min" type="double" required>
+  Minimum allowed value (inclusive)
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for min value)
+</ParamField>
+
+**Note:** It is recommended to use the `number()` rule first to ensure the String is a valid number.
+
+**Example:**
+
+```java
+Validator validator = new Validator();
+validator.number();
+validator.minValue(0);
+validator.minValue(18, "Must be at least %s years old");
+
+validator.isValid("17");    // false
+validator.isValid("18");    // true
+validator.isValid("25");    // true
+validator.isValid("18.5");  // true
+```
+
+**Annotation Usage:**
+
+```java
+public class Order {
+    @Number
+    @MinValue(min = 0.01, message = "Price must be at least $0.01")
+    private String price;
+    
+    @Number
+    @MinValue(min = 1)
+    private String quantity;
+}
+```
+
+---
+
+### maxValue
+
+Validates that the numeric value of the String is not greater than the maximum.
+
+```java
+public void maxValue(double max, String message)
+public void maxValue(double max)
+```
+
+<ParamField path="max" type="double" required>
+  Maximum allowed value (inclusive)
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholder for max value)
+</ParamField>
+
+**Note:** It is recommended to use the `number()` rule first.
+
+**Example:**
+
+```java
+Validator validator = new Validator();
+validator.number();
+validator.maxValue(100);
+validator.maxValue(150.5, "Cannot exceed %s");
+
+validator.isValid("99");     // true
+validator.isValid("100");    // true
+validator.isValid("100.5");  // false
+validator.isValid("150.5");  // true if max is 150.5
+```
+
+**Annotation Usage:**
+
+```java
+public class Survey {
+    @Number
+    @MaxValue(max = 10, message = "Rating must be 10 or less")
+    private String rating;
+    
+    @Number
+    @MaxValue(max = 120)
+    private String age;
+}
+```
+
+---
+
+### rangeValue
+
+Validates that the numeric value of the String is within the specified range (inclusive).
+
+```java
+public void rangeValue(double min, double max, String message)
+public void rangeValue(double min, double max)
+```
+
+<ParamField path="min" type="double" required>
+  Minimum allowed value (inclusive)
+</ParamField>
+
+<ParamField path="max" type="double" required>
+  Maximum allowed value (inclusive)
+</ParamField>
+
+<ParamField path="message" type="String">
+  Error message (can use %s placeholders for min and max values)
+</ParamField>
+
+**Note:** It is recommended to use the `number()` rule first.
+
+**Example:**
+
+```java
+Validator validator = new Validator();
+validator.number();
+validator.rangeValue(1, 10);
+validator.rangeValue(18, 65, "Age must be between %s and %s");
+
+validator.isValid("0");     // false (below min)
+validator.isValid("1");     // true
+validator.isValid("5.5");   // true
+validator.isValid("10");    // true
+validator.isValid("11");    // false (above max)
+```
+
+**Builder Usage:**
+
+```java
+Validator percentageValidator = new Validator.Builder()
+    .number("Must be a number")
+    .rangeValue(0, 100, "Percentage must be between %s and %s")
+    .build();
+```
+
+**Annotation Usage:**
+
+```java
+public class Assessment {
+    @Number
+    @RangeValue(min = 0, max = 100, message = "Score must be 0-100")
+    private String score;
+    
+    @Number
+    @RangeValue(min = 1.0, max = 5.0)
+    private String rating;
+}
+```
+
+## Complete Examples
+
+### Price Validation
+
+```java
+Validator priceValidator = new Validator.Builder()
+    .required("Price is required")
+    .number("Price must be a valid number")
+    .minValue(0.01, "Price must be at least $%s")
+    .maxValue(999999.99, "Price cannot exceed $%s")
+    .build();
+
+try {
+    priceValidator.validOrFail("price", "49.99");
+    System.out.println("Valid price");
+} catch (InvalidEvaluationException e) {
+    System.err.println(e.getMessage());
+}
+```
+
+### Age Validation
+
+```java
+Validator ageValidator = new Validator();
+ageValidator.required("Age is required");
+ageValidator.number("Age must be a number");
+ageValidator.rangeValue(0, 150, "Age must be between %s and %s");
+ageValidator.onlyNumbers(); // Ensure no decimal points
+
+ageValidator.onInvalidEvaluation(error -> {
+    System.err.println("Validation error: " + error);
+});
+
+boolean isValid = ageValidator.isValid("25"); // true
+```
+
+### Quantity Validation
+
+```java
+Validator quantityValidator = new Validator.Builder()
+    .required()
+    .onlyNumbers() // Integer only
+    .minValue(1, "Quantity must be at least %s")
+    .maxValue(1000, "Cannot order more than %s items")
+    .build();
+```
+
+### Phone Number Validation
+
+```java
+Validator phoneValidator = new Validator.Builder()
+    .required("Phone number is required")
+    .numberPattern(
+        "+1 (xxx) xxx-xxxx",
+        "Phone must be in format +1 (xxx) xxx-xxxx"
+    )
+    .build();
+
+boolean valid = phoneValidator.isValid("+1 (555) 123-4567"); // true
+```
+
+### Credit Card Validation
+
+```java
+Validator cardValidator = new Validator();
+cardValidator.required("Card number is required");
+cardValidator.numberPattern(
+    "xxxx-xxxx-xxxx-xxxx",
+    "Card must be in format xxxx-xxxx-xxxx-xxxx"
+);
+
+cardValidator.onInvalidEvaluation(error -> {
+    showErrorDialog(error);
+});
+```
+
+### Rating Validation (1-5 Stars)
+
+```java
+Validator ratingValidator = new Validator.Builder()
+    .required("Rating is required")
+    .number("Rating must be a number")
+    .rangeValue(1, 5, "Rating must be between %s and %s stars")
+    .build();
+```
+
+### Percentage Validation
+
+```java
+Validator percentValidator = new Validator();
+percentValidator.required();
+percentValidator.number("Must be a valid number");
+percentValidator.rangeValue(0, 100, "Percentage must be between %s%% and %s%%");
+
+if (percentValidator.isValid("85.5")) {
+    System.out.println("Valid percentage");
+}
+```
+
+### Discount Code Validation
+
+```java
+Validator discountCodeValidator = new Validator.Builder()
+    .required()
+    .numberPattern("SAVE-xx", "Discount code must be in format SAVE-xx")
+    .build();
+
+// Valid codes: "SAVE-10", "SAVE-25", "SAVE-xx"
+```
+
+## Using with Annotations
+
+```java
+public class ProductForm {
+    @Required(message = "Product name is required")
+    private String name;
+    
+    @Number
+    @MinValue(min = 0.01)
+    @MaxValue(max = 99999.99)
+    private String price;
+    
+    @Number
+    @MinValue(min = 0)
+    @MaxValue(max = 10000)
+    private String stockQuantity;
+    
+    @Number
+    @RangeValue(min = 0, max = 100)
+    private String discountPercent;
+    
+    @NumberPattern(patter = "xxx-xxx-xxxx")
+    private String sku;
+}
+
+// Validate the entire form
+ProductForm form = new ProductForm();
+try {
+    Validator.validOrFail(form);
+    System.out.println("Form is valid");
+} catch (InvalidEvaluationException e) {
+    System.err.println("Field " + e.getKey() + ": " + e.getMessage());
+}
+```
+
+## Best Practices
+
+### 1. Always Validate Format First
+
+```java
+// Good
+validator.number();
+validator.minValue(0);
+validator.maxValue(100);
+
+// Less ideal - may fail if not a number
+validator.minValue(0);
+```
+
+### 2. Use Appropriate Data Types
+
+```java
+// For integers
+validator.onlyNumbers();
+validator.rangeValue(1, 100);
+
+// For decimals
+validator.number();
+validator.rangeValue(0.01, 999.99);
+```
+
+### 3. Provide Clear Error Messages
+
+```java
+// Good
+validator.rangeValue(18, 65, "Age must be between %s and %s years");
+
+// Less helpful
+validator.rangeValue(18, 65);
+```
+
+### 4. Combine with Other Rules
+
+```java
+Validator priceValidator = new Validator.Builder()
+    .required("Price is required")
+    .number("Must be a valid number")
+    .minValue(0.01, "Price must be positive")
+    .maxLength(10) // Limit total string length
+    .build();
+```
+
+## See Also
+
+- [Validator](/api/validator) - Main validation class
+- [String Rules](/api/rules/string-rules) - String validation rules
+- [Format Rules](/api/rules/format-rules) - Format validation rules
+- [Comparison Rules](/api/rules/comparison-rules) - Field comparison

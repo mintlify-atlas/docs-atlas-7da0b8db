@@ -1,0 +1,154 @@
+---
+title: Introduction
+description: Learn about Validator, a powerful Java library for validating strings through chainable rules
+---
+
+## What is Validator?
+
+Validator is a Java library that simplifies string validation by allowing you to chain a series of rules. Whether you're validating user input, form data, or API parameters, Validator provides an intuitive and flexible API to ensure your strings meet specific criteria.
+
+<Card title="Key Features" icon="star">
+  - **Chainable Rules**: Build complex validation logic by chaining multiple rules together
+  - **Predefined Validators**: 27+ built-in validators for common use cases (email, URL, phone patterns, etc.)
+  - **Custom Rules**: Define your own validation logic with lambda expressions
+  - **Annotation Support**: Use annotations to validate POJOs declaratively
+  - **Flexible Error Handling**: Choose between events or exceptions for validation failures
+  - **Internationalization**: Built-in support for English and Spanish error messages
+</Card>
+
+## Why Use Validator?
+
+Validation is a critical part of any application, but it often leads to verbose, repetitive code. Validator solves this problem by providing:
+
+### Clean, Readable Code
+
+Instead of scattered if-statements and null checks, Validator lets you express validation rules declaratively:
+
+```java
+Validator emailValidator = new Validator.Builder()
+    .required()
+    .email()
+    .maxLength(255)
+    .build();
+```
+
+### Reusability
+
+Define validators once and reuse them throughout your application:
+
+```java
+public class Validators {
+    public static final Validator PASSWORD = new Validator.Builder()
+        .required()
+        .minLength(8)
+        .mustContainMin(1, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        .mustContainMin(1, "0123456789")
+        .build();
+}
+```
+
+### Type Safety
+
+Validator works with Java's type system and provides compile-time safety through its fluent API.
+
+## Validation Approaches
+
+Validator supports three different approaches to validation:
+
+<CardGroup cols={3}>
+  <Card title="Builder Pattern" icon="code">
+    Chain rules programmatically using the fluent Builder API
+  </Card>
+  
+  <Card title="Annotations" icon="at">
+    Declare validation rules directly on class fields
+  </Card>
+  
+  <Card title="Custom Rules" icon="wrench">
+    Define your own validation logic with lambda expressions
+  </Card>
+</CardGroup>
+
+## How It Works
+
+Validator evaluates rules in the order they are defined. When validation fails:
+
+<Steps>
+  <Step title="Rule Evaluation">
+    Each rule is checked sequentially against the string
+  </Step>
+  
+  <Step title="First Failure">
+    When a rule fails, evaluation stops immediately
+  </Step>
+  
+  <Step title="Error Handling">
+    The associated error message is returned via event callback or exception
+  </Step>
+</Steps>
+
+<Note>
+  **Important**: A string is considered valid only if it passes ALL rules. Validation stops at the first failure, making the process efficient.
+</Note>
+
+## Use Cases
+
+Validator is perfect for:
+
+- **Form Validation**: Validate user registration, login, and profile forms
+- **API Input**: Ensure API request parameters meet requirements
+- **Data Sanitization**: Verify data before database operations
+- **Configuration Validation**: Check application settings and properties
+- **Business Rules**: Enforce domain-specific validation logic
+
+## Example: User Registration
+
+Here's a quick example of validating user registration data:
+
+```java
+import io.github.ApamateSoft.validator.Validator;
+import io.github.ApamateSoft.validator.exceptions.InvalidEvaluationException;
+
+public class UserRegistration {
+    private Validator emailValidator = new Validator.Builder()
+        .required()
+        .email()
+        .build();
+    
+    private Validator passwordValidator = new Validator.Builder()
+        .required()
+        .minLength(8)
+        .mustContainOne("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        .mustContainOne("0123456789")
+        .build();
+    
+    public void register(String email, String password) {
+        try {
+            emailValidator.validOrFail("email", email);
+            passwordValidator.validOrFail("password", password);
+            
+            // Proceed with registration
+            System.out.println("Registration successful!");
+        } catch (InvalidEvaluationException e) {
+            System.err.println(e.getKey() + ": " + e.getMessage());
+        }
+    }
+}
+```
+
+## Requirements
+
+- **Java 11** or higher
+- **No external dependencies** (except for testing)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Add Validator to your project with Maven or Gradle
+  </Card>
+  
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Build your first validator in 5 minutes
+  </Card>
+</CardGroup>
