@@ -1,0 +1,126 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Validator",
+  "projectDescription": "A Java library for validating strings through chainable rules and annotations",
+  "theme": "palm",
+  "primaryColor": "#4F46E5",
+  "lightColor": "#818CF8",
+  "darkColor": "#3730A3",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "core-concepts/validation-approaches",
+              "core-concepts/rule-chaining",
+              "core-concepts/annotations",
+              "core-concepts/custom-rules"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/form-validation",
+              "guides/password-validation",
+              "guides/localization",
+              "guides/error-handling"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core Classes",
+            "pages": [
+              "api/validator",
+              "api/rule"
+            ]
+          },
+          {
+            "group": "Validation Rules",
+            "pages": [
+              "api/rules/string-rules",
+              "api/rules/numeric-rules",
+              "api/rules/format-rules",
+              "api/rules/comparison-rules"
+            ]
+          },
+          {
+            "group": "Annotations",
+            "pages": [
+              "api/annotations/overview",
+              "api/annotations/string-annotations",
+              "api/annotations/numeric-annotations",
+              "api/annotations/format-annotations"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/utilities/alphabets",
+              "api/utilities/regular-expressions",
+              "api/utilities/validators"
+            ]
+          },
+          {
+            "group": "Exceptions",
+            "pages": [
+              "api/exceptions"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Chain-based validation with fluent API",
+    "27+ predefined validation rules",
+    "Annotation-based validation support",
+    "Custom rule creation",
+    "Event-driven and exception-based error handling",
+    "Built-in localization (English/Spanish)",
+    "Comprehensive utilities (Alphabets, RegEx patterns)"
+  ],
+  "publicApiSurface": [
+    "Validator",
+    "Validator.Builder",
+    "Rule",
+    "@Required",
+    "@Email",
+    "@MinLength",
+    "@MaxLength",
+    "@Compare",
+    "@Date",
+    "@NumberPattern",
+    "@OnlyNumbers",
+    "@OnlyLetters",
+    "@OnlyAlphanumeric",
+    "@Ip",
+    "@Ipv4",
+    "@Ipv6",
+    "@Link",
+    "@HttpLink",
+    "@HttpsLink",
+    "@WwwLink",
+    "Alphabets",
+    "RegularExpression",
+    "Validators",
+    "Messages",
+    "MessagesEn",
+    "MessagesEs",
+    "InvalidEvaluationException"
+  ]
+}
